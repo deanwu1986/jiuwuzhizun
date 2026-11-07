@@ -8,6 +8,8 @@ layout: default
     <h1 class="page-heading">{{ page.title }}</h1>
   {%- endif -%}
 
+  {%- include wechat-button.html -%}
+
   {{ content }}
 
   {%- if site.posts.size > 0 -%}
@@ -28,6 +30,16 @@ layout: default
       </li>
       {%- endfor -%}
     </ul>
+  {%- endif -%}
+
+  {%- if site.data.games.size > 0 -%}
+  <section class="games-section">
+    <h2 class="section-heading">小游戏</h2>
+    {% include game-cards.html limit=3 %}
+    {%- if site.data.games.size > 3 -%}
+    <p class="games-more"><a href="{{ '/games/' | relative_url }}">查看全部小游戏 →</a></p>
+    {%- endif -%}
+  </section>
   {%- endif -%}
 
 </div>
