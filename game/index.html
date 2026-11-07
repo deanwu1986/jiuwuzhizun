@@ -1,0 +1,3918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FIRMAN 空调特工 · 第一关 DEMO v1.0</title>
+<style>
+:root{
+  --navy:#1B3A5F; --navy-d:#122A46; --navy-l:#2C5480;
+  --brand:#82D2E8; --brand-d:#5CCCDB; --brand-l:#A3E2EB;
+  --red:#DC1E2E; --heat:#E9A15C; --paper:#F6ECD7; --ink:#122A46;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#07131F;overflow:hidden;
+  font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;color:#fff}
+#stage{position:relative;width:min(100vw,calc(100vh * 16 / 9));aspect-ratio:16/9;
+  margin:auto;top:50%;transform:translateY(-50%);background:#0A1626;overflow:hidden;
+  box-shadow:0 0 0 2px #1B3A5F,0 24px 70px rgba(0,0,0,.7);cursor:none}
+#stage.ui{cursor:default}
+#cv{display:block;width:100%;height:100%;image-rendering:auto}
+.hidden{display:none !important}
+.screen{position:absolute;inset:0}
+
+/* ---------- 开始界面 ---------- */
+#title{display:flex;align-items:center;gap:3%;padding:3.6% 4.6%;
+  background:
+    linear-gradient(100deg,rgba(7,18,32,.96) 0%,rgba(7,18,32,.88) 46%,rgba(7,18,32,.36) 100%),
+    url("FIRMAN_Stage_Heatwave_FINAL_v3.jpg") center/cover no-repeat,#22344A;
+  cursor:default}
+.ticket{width:52%;max-width:600px;background:var(--paper);color:var(--ink);
+  border:3px solid var(--navy);border-radius:6px;padding:2.6% 3.2%;
+  box-shadow:10px 10px 0 rgba(18,42,70,.55);position:relative}
+.ticket:before{content:"";position:absolute;left:0;top:0;bottom:0;width:9px;
+  background:linear-gradient(180deg,var(--red) 0 26%,var(--brand) 26% 74%,var(--navy) 74% 100%)}
+.brand-lock{display:block;width:52%;max-height:92px;object-fit:contain;margin:0 0 1.2% 4%}
+.ticket h1{font-size:clamp(20px,3vw,42px);line-height:1.08;margin:.3em 0 .1em;
+  letter-spacing:.04em;color:var(--navy)}
+.ticket .en{font-size:clamp(8px,1vw,13px);letter-spacing:.3em;color:#5A7490;margin:0 0 2.4%}
+.mission{border-top:2px dashed #B9C9D6;border-bottom:2px dashed #B9C9D6;
+  padding:2% 0;margin-bottom:2.6%;font-size:clamp(10px,1.05vw,14px);line-height:1.6}
+.mission b{color:var(--navy)}
+.mission .tag{display:inline-block;background:var(--navy);color:var(--brand);
+  font-size:.84em;letter-spacing:.12em;padding:.14em .7em;border-radius:2px;margin-right:.6em}
+.mission .warn{color:var(--red);font-weight:700}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.6em;
+  background:var(--brand);color:var(--navy);border:3px solid var(--navy);border-radius:4px;
+  font-weight:800;font-size:clamp(12px,1.3vw,18px);letter-spacing:.08em;
+  padding:.5em 1.3em;cursor:pointer;box-shadow:4px 4px 0 var(--navy);
+  transition:transform .1s,box-shadow .1s;font-family:inherit}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--navy)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--navy)}
+.btn.ghost{background:transparent;color:var(--navy);box-shadow:none;border-width:2px}
+.keys{margin-top:2.4%;font-size:clamp(9px,.92vw,12.5px);line-height:1.75;color:#4B6076}
+.keys .krow{margin:.1em 0}
+.keys .krow.warn{color:#E98C4A;font-weight:600;font-size:clamp(8px,.8vw,11px)}
+.keys kbd{display:inline-block;min-width:1.6em;text-align:center;background:#fff;
+  border:1px solid #A9BCCB;border-bottom-width:2px;border-radius:3px;
+  padding:0 .34em;margin:0 .1em;font-family:inherit;font-weight:700;color:var(--navy);font-size:.94em}
+.hero-wrap{width:33%;display:flex;flex-direction:column;align-items:center;gap:2%}
+.hero-card{width:100%;height:min(62vh,470px);background:var(--paper);
+  border:3px solid var(--paper);outline:2px solid rgba(130,210,232,.7);
+  border-radius:4px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.55);position:relative}
+.hero-card img{width:100%;height:100%;object-fit:cover;object-position:0% 50%;display:block}
+.hero-card:after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 66%,rgba(18,42,70,.34) 100%);pointer-events:none}
+.hero-tag{font-size:clamp(9px,.9vw,12px);letter-spacing:.18em;color:var(--brand);
+  background:rgba(18,42,70,.78);border:1px solid rgba(130,210,232,.55);
+  padding:.38em 1em;border-radius:2px;white-space:nowrap}
+.corner{position:absolute;right:2.2%;bottom:2.6%;font-size:clamp(8px,.86vw,12px);
+  letter-spacing:.2em;color:rgba(255,255,255,.62)}
+.corner b{color:var(--brand)}
+
+/* ---------- 结算 / 暂停 ---------- */
+#result,#pause{display:flex;align-items:center;justify-content:center;
+  background:rgba(7,18,32,.84);backdrop-filter:blur(3px);cursor:default}
+.card{width:min(54%,600px);background:var(--paper);color:var(--ink);
+  border:4px solid var(--navy);border-radius:6px;padding:2.8% 3.4%;text-align:center;
+  box-shadow:10px 10px 0 rgba(0,0,0,.42)}
+.card .kicker{font-size:clamp(9px,1vw,13px);letter-spacing:.3em;color:#5A7490}
+.card h2{font-size:clamp(21px,2.9vw,40px);margin:.2em 0 .4em;color:var(--navy)}
+.card p{font-size:clamp(10px,1.1vw,15px);line-height:1.6;margin:0 0 1.2em;color:#3E566D}
+.stats{display:flex;justify-content:center;gap:5%;border-top:2px dashed #B9C9D6;
+  border-bottom:2px dashed #B9C9D6;padding:2.8% 0;margin-bottom:4%}
+.stats div{min-width:18%}
+.stats span{display:block;font-size:clamp(8px,.9vw,11px);letter-spacing:.1em;color:#6A8197}
+.stats b{display:block;font-size:clamp(16px,1.9vw,27px);color:var(--navy)}
+.grade{display:inline-block;background:var(--brand);color:var(--navy);border:3px solid var(--navy);
+  border-radius:50%;width:2.2em;height:2.2em;line-height:2.1em;font-weight:900;
+  font-size:clamp(17px,2vw,28px);margin-bottom:.3em}
+.card .row{display:flex;gap:2.4%;justify-content:center}
+
+/* ---------- 调试面板 ---------- */
+#debug{position:absolute;right:1.2%;top:8%;width:23%;min-width:200px;
+  background:rgba(10,24,42,.95);border:2px solid var(--brand);border-radius:5px;
+  padding:1.2% 1.4%;font-size:clamp(9px,.9vw,12.5px);z-index:9;cursor:default}
+#debug h3{margin:0 0 .6em;font-size:1.05em;letter-spacing:.14em;color:var(--brand)}
+#debug label{display:block;margin:.5em 0 .1em;color:#C8DCE8}
+#debug label b{float:right;color:var(--brand);font-variant-numeric:tabular-nums}
+#debug input[type=range]{width:100%;accent-color:var(--brand);height:13px}
+#debug .note{color:#8FA9BD;line-height:1.5;margin:.7em 0 .4em}
+#debug button{width:100%;font-size:1em;padding:.35em;margin-top:.35em}
+
+#hint{position:absolute;left:50%;transform:translateX(-50%);bottom:2.2%;
+  transition:opacity .6s;white-space:nowrap;
+  font-size:clamp(8px,.86vw,12px);letter-spacing:.06em;color:rgba(255,255,255,.9);
+  background:rgba(10,22,38,.62);border:1px solid rgba(130,210,232,.28);
+  padding:.3em .9em;border-radius:2px;text-shadow:0 1px 3px rgba(0,0,0,.9);pointer-events:none}
+#toast{position:absolute;left:50%;top:13%;transform:translateX(-50%);
+  background:rgba(18,42,70,.92);border:1px solid var(--brand);color:var(--brand);
+  padding:.45em 1.2em;border-radius:3px;font-size:clamp(10px,1.05vw,14px);
+  letter-spacing:.1em;opacity:0;transition:opacity .25s;pointer-events:none;z-index:10}
+#muteBtn{position:absolute;left:1.7%;top:17%;z-index:11;
+  background:rgba(18,42,70,.82);border:1px solid rgba(130,210,232,.6);color:var(--brand);
+  font-family:inherit;font-size:clamp(9px,.9vw,12px);letter-spacing:.12em;
+  padding:.35em .8em;border-radius:3px;cursor:pointer}
+#muteBtn:hover{background:rgba(130,210,232,.18)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv" width="1280" height="720"></canvas>
+
+  <!-- ============ 开始界面 ============ -->
+  <div id="title" class="screen">
+    <div class="ticket">
+      <img class="brand-lock" src="logo_sheet_rgba.png" alt="FIRMAN 官方视觉锤 / INVERTER AC / FIRMAN 字标">
+      <h1>FIRMAN 空调特工</h1>
+      <p class="en">COOLING OPERATIVE · LEVEL 1-1</p>
+      <div class="mission">
+        <div><span class="tag">工单 #001</span><b>滨海街区 · 晨</b>　室内机安装</div>
+        <div>热浪正在吞城。穿过拥堵的街区、压制沿途热浪生物，在时限内完成安装，把室温降到 24℃。<span class="warn">超时则全城沦陷。</span></div>
+      </div>
+      <button class="btn" id="startBtn">▶ 开始关卡</button>
+      <div class="keys">
+        <div class="krow"><kbd>A</kbd><kbd>D</kbd> 移动　<kbd>空格</kbd> 跳跃 / 空中喷气背包（耗氟利昂）</div>
+        <div class="krow"><kbd>鼠标左键</kbd> 开火　<kbd>滚轮</kbd> 切换武器　<kbd>右键</kbd> 抽真空泵大招</div>
+        <div class="krow"><kbd>E</kbd> 按住安装　<kbd>R</kbd> 重开　<kbd>P</kbd> 暂停　<kbd>M</kbd> 静音　<kbd>F2</kbd> 调参</div>
+        <div class="krow warn">氟利昂可冷冻敌方火焰弹 · 焊枪能烧穿堵路车辆 · 冲刺安装时会遭遇围攻</div>
+        <div class="krow warn">小心迎面驶来的黄色面包车与摩的——跳起来躲开！</div>
+      </div>
+    </div>
+    <div class="hero-wrap">
+      <div class="hero-card"><img src="FIRMAN_Hero_CANON_v1.0.jpg" alt="主角定版立绘 CHARACTER LOCK v1.0"></div>
+      <div class="hero-tag">CHARACTER LOCK v1.0 · 定版形象</div>
+    </div>
+    <div class="corner">正式 DEMO <b>v1.0</b> · 第一关可玩切片</div>
+  </div>
+
+  <!-- ============ 结算 ============ -->
+  <div id="result" class="screen hidden">
+    <div class="card">
+      <div class="kicker" id="rKicker">WORK ORDER COMPLETE</div>
+      <div class="grade" id="rGrade">S</div>
+      <h2 id="rTitle">安装完成！</h2>
+      <p id="rDesc">室温降到 24℃，热浪退去，天空恢复 FIRMAN 蓝。</p>
+      <div class="stats">
+        <div><span>用时</span><b id="rTime">0s</b></div>
+        <div><span>剩余</span><b id="rLeft">0s</b></div>
+        <div><span>击退</span><b id="rKill">0</b></div>
+        <div><span>积分</span><b id="rScore">0</b></div>
+        <div><span>生命</span><b id="rHp">4</b></div>
+      </div>
+      <div class="row">
+        <button class="btn" id="retryBtn">↻ 再来一次</button>
+        <button class="btn ghost" id="backBtn">返回标题</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 暂停 ============ -->
+  <div id="pause" class="screen hidden">
+    <div class="card">
+      <div class="kicker">PAUSED</div>
+      <h2>已暂停</h2>
+      <p>按 <b>P</b> 继续，按 <b>R</b> 重开本关。</p>
+      <div class="row"><button class="btn" id="resumeBtn">继续游戏</button></div>
+    </div>
+  </div>
+
+  <!-- ============ 调参面板 ============ -->
+  <div id="debug" class="hidden">
+    <h3>调参面板 · F2 关闭</h3>
+    <label>移动速度 <b id="v_speed"></b></label><input id="s_speed" type="range" min="240" max="620" step="10">
+    <label>跳跃力度 <b id="v_jump"></b></label><input id="s_jump" type="range" min="500" max="980" step="10">
+    <label>气量回充 <b id="v_gas"></b></label><input id="s_gas" type="range" min="6" max="80" step="2">
+    <label>安装时长 <b id="v_hold"></b></label><input id="s_hold" type="range" min="1" max="6" step="0.2">
+    <label>热浪时限 <b id="v_limit"></b></label><input id="s_limit" type="range" min="40" max="180" step="5">
+    <label>怪物密度 <b id="v_density"></b></label><input id="s_density" type="range" min="0.3" max="2" step="0.1">
+    <label>音乐音量 <b id="v_vol"></b></label><input id="s_vol" type="range" min="0" max="100" step="5">
+    <p class="note">速度 / 跳跃 / 气量 / 音量即时生效；时限与怪物密度需重开本关。</p>
+    <button class="btn" id="applyBtn">应用并重开</button>
+  </div>
+
+  <button id="muteBtn">♪ 音乐 开</button>
+  <div id="toast"></div>
+  <div id="hint" class="hidden">A/D 移动　空格 跳跃·喷气　左键 开火　滚轮 换武器　右键 抽真空　E 安装</div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   FIRMAN 空调特工 · 第一关 正式 DEMO v1.0
+   ------------------------------------------------------------------------
+   键鼠操作（A/D 移动、空格跳跃/喷气、左键开火、滚轮换武器、右键大招）
+   · 四武器 + 抽真空泵大招，命中顿帧 / 屏幕震动 / 爆炸粒子
+   · 五类会主动攻击的热浪生物，地面与高处阁楼混合分布
+   · 障碍为损毁车辆、堵车车流、集装箱等有体积的实体，可踩踏
+   · 三层视差程序化街景，逐段变化；广告牌用仿射矩阵贴合官方 LOGO
+   · 音乐与音效全部 WebAudio 程序化生成（Afrobeats + 电子层，热度越高越激烈）
+   美术：主角与怪物为程序化矢量绘制；主角配色/结构对齐 CANON 定版，不改变设计。
+   ========================================================================= */
+
+/* ===================== 0. 调参区：改这里 ===================== */
+const CONFIG = {
+  view:   { W: 1280, H: 720 },
+  world:  { width: 5600, groundY: 600, startX: 130, installX: 5215 },
+  player: {
+    w: 46, h: 96, speed: 372, accel: 2900, friction: 3400,
+    jump: -745, gravity: 2080, maxFall: 1280,
+    hp: 4, gasMax: 88, gasRegen: 14, jetForce: 2450, jetCost: 34,
+    invuln: 1.15, aimRange: 560, ceiling: 78
+  },
+  job:    { holdTime: 3.4, tempStart: 32, tempEnd: 24, reach: 118 },
+  heat:   { limit: 76, burnInterval: 1.05 },
+  weapons: {
+    // 氟利昂：伤害最低，但唯一能冷冻消除敌方火焰弹 + 冻结怪物；气量最省
+    freon:  { name: "氟利昂喷射器", en: "FREON JET",    cd: 0,    dps: 21,  chill: 62, range: 258, cost: 11 },
+    // 扳手：单发高伤、大范围横扫，无气量消耗的可靠近战
+    wrench: { name: "大扳手",       en: "PIPE WRENCH",  cd: 0.72, dmg: 58,  range: 128, knock: 620 },
+    // 钻枪：超长直线穿射、子弹无限，但攻击力偏弱；命中怪物附带闪烁 + 减速
+    drill:  { name: "打孔钻枪",     en: "CORE DRILL",   cd: 0.30, gas: 0, dmg: 15, range: 920, speed: 1650, recoil: 120 },
+    // 焊枪：短距离宽锥群攻、单体伤害高于氟利昂，但耗气最凶；还能烧毁障碍车辆
+    torch:  { name: "便携焊枪",     en: "BLOW TORCH",   cd: 0,    dps: 55,  range: 122, gas: 24, cone: .58 },
+    vacuum: { name: "抽真空泵",     en: "VACUUM PUMP",  cd: 10.5, dmg: 64,  radius: 275, gas: 30 }
+  },
+  traffic:{ minGap: 5.5, maxGap: 9.5, speed: [318, 392] },
+  siege:  { gap: 2.3, maxAlive: 6 },
+  drops:  { bigHp: .30, bigGas: .42, scoreVal: 500 },
+  color:  { navy:"#1B3A5F", navyD:"#0F2438", navyL:"#2C5480", brand:"#82D2E8",
+            brandD:"#5CCCDB", brandL:"#A3E2EB", red:"#DC1E2E", heat:"#E9A15C",
+            paper:"#F6ECD7", ink:"#122A46", ember:"#FF7A33", lava:"#E23C12" }
+};
+/* ===================================================================== */
+
+const C = CONFIG.color, V = CONFIG.view;
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => v < a ? a : (v > b ? b : v);
+const lerp = (a,b,t) => a + (b-a)*t;
+const rnd = (a,b) => a + Math.random()*(b-a);
+const sign = v => v < 0 ? -1 : 1;
+const TAU = Math.PI*2;
+const dist = (x1,y1,x2,y2) => Math.hypot(x2-x1, y2-y1);
+function seeded(n){ let s = n>>>0; return () => (s = (s*1664525 + 1013904223)>>>0) / 4294967296; }
+function roundRect(g,x,y,w,h,r){
+  // 兼容两种调用：roundRect(x,y,w,h,r) 用主画布，或显式传目标上下文
+  if (typeof g === "number"){ r = h; h = w; w = y; y = x; x = g; g = ctx; }
+  r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+  g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r);
+  g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+}
+function ellipse(g,x,y,rx,ry){
+  if (typeof g === "number"){ ry = rx; rx = y; y = x; x = g; g = ctx; }
+  g.beginPath(); g.ellipse(x,y,rx,ry,0,0,TAU);
+}
+
+/* ---------- 1. 音频：程序化音乐 + 打击音效 ---------- */
+const AU = {
+  ctx:null, master:null, music:null, sfx:null, noiseBuf:null, spraySrc:null,
+  sprayGain:null, sprayFilter:null, playing:false, muted:false, vol:0.5,
+  intensity:0, step:0, nextT:0, bar:0, ready:false,
+
+  init(){
+    if (!this.ready){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      const c = new AC();
+      this.ctx = c;
+      const comp = c.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 18; comp.ratio.value = 5;
+      comp.attack.value = .004; comp.release.value = .22;
+      comp.connect(c.destination);
+      this.master = c.createGain(); this.master.gain.value = this.vol;
+      this.master.connect(comp);
+      this.music = c.createGain(); this.music.gain.value = .40; this.music.connect(this.master);
+      this.sfx = c.createGain(); this.sfx.gain.value = .85; this.sfx.connect(this.master);
+      const len = Math.floor(c.sampleRate * 2);
+      const buf = c.createBuffer(1, len, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i=0;i<len;i++) d[i] = Math.random()*2-1;
+      this.noiseBuf = buf;
+      // 持续喷射噪音（喷枪/焊枪共用，靠增益开关）
+      const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+      const f = c.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2400; f.Q.value = .7;
+      const g = c.createGain(); g.gain.value = 0;
+      src.connect(f); f.connect(g); g.connect(this.sfx);
+      src.start();
+      this.spraySrc = src; this.sprayFilter = f; this.sprayGain = g;
+      this.ready = true;
+    }
+    if (this.ctx.state === "suspended") this.ctx.resume();
+    return true;
+  },
+  noise(t, dur, vol, type, freq, q){
+    if (!this.ready) return;
+    const c = this.ctx, s = c.createBufferSource();
+    s.buffer = this.noiseBuf; s.loop = true;
+    const f = c.createBiquadFilter(); f.type = type || "bandpass";
+    f.frequency.setValueAtTime(freq || 1200, t); f.Q.value = q || 1;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + .006);
+    g.gain.exponentialRampToValueAtTime(.0008, t + dur);
+    s.connect(f); f.connect(g); g.connect(this.sfx);
+    s.start(t, Math.random()*1.5); s.stop(t + dur + .05);
+  },
+  tone(t, type, f0, f1, dur, vol, dest){
+    if (!this.ready) return;
+    const c = this.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20,f1), t + dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + .008);
+    g.gain.exponentialRampToValueAtTime(.0007, t + dur);
+    o.connect(g); g.connect(dest || this.sfx);
+    o.start(t); o.stop(t + dur + .04);
+  },
+  mtof(m){ return 440 * Math.pow(2, (m-69)/12); },
+
+  /* ---- 音乐：16 分音符调度器 ---- */
+  startMusic(){
+    if (!this.init() || this.playing) return;
+    this.playing = true; this.step = 0; this.bar = 0;
+    this.nextT = this.ctx.currentTime + .12;
+  },
+  stopMusic(){ this.playing = false; },
+  setIntensity(v){
+    const nv = clamp(v,0,1);
+    if (Math.abs(nv - this.intensity) > .02) this.intensity = nv;
+  },
+  musicalTick(){
+    if (!this.playing || !this.ready) return;
+    const c = this.ctx, bpm = 132 + this.intensity*16;
+    const spb = 60 / bpm / 4;
+    while (this.nextT < c.currentTime + .16){
+      this.playStep(this.step, this.nextT);
+      this.nextT += spb;
+      this.step++;
+    }
+  },
+  playStep(step, t){
+    const s = step % 16, bar = Math.floor(step/16) % 4;
+    const I = this.intensity, M = this.music;
+    const roots = [45, 41, 48, 43];          // Am  F  C  G
+    const chords = [[57,60,64],[53,57,60],[48,52,55],[55,59,62]];
+    const root = roots[bar], chord = chords[bar];
+
+    // kick
+    if (s===0 || s===6 || s===10 || (s===14 && I>.55)){
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(155, t);
+      o.frequency.exponentialRampToValueAtTime(44, t+.13);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.95, t+.004);
+      g.gain.exponentialRampToValueAtTime(.001, t+.40);
+      o.connect(g); g.connect(M); o.start(t); o.stop(t+.42);
+    }
+    // clap / rim
+    if (s===4 || s===12){
+      this.noise(t, .16, .34, "bandpass", 1900, 1.6);
+    }
+    // shaker
+    if (s%2===1 || I>.45){
+      this.noise(t, .045, .10 + (s%2?0:.03), "highpass", 7000, .8);
+    }
+    // talking drum（会说话的鼓：音高下滑，约鲁巴味）
+    if (s===2 || s===7 || s===9 || s===14){
+      const base = root + 12 + (s===9? 3 : 0);
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(this.mtof(base+6), t);
+      o.frequency.exponentialRampToValueAtTime(this.mtof(base-1), t+.16);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.42, t+.006);
+      g.gain.exponentialRampToValueAtTime(.001, t+.22);
+      const bp = this.ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=520; bp.Q.value=2.2;
+      o.connect(g); g.connect(bp); bp.connect(M); o.start(t); o.stop(t+.26);
+    }
+    // gankogui 铃（西非 Ewe/约鲁巴节奏骨架：短促金属双击）
+    if (s===3 || s===6 || s===11 || s===14){
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = "square"; o.frequency.value = this.mtof(root+31);
+      const hp = this.ctx.createBiquadFilter(); hp.type="highpass"; hp.frequency.value = 1800;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.075, t+.002);
+      g.gain.exponentialRampToValueAtTime(.001, t+.09);
+      o.connect(hp); hp.connect(g); g.connect(M); o.start(t); o.stop(t+.11);
+    }
+    // djun-djun 低音鼓（跟 kick 错开半拍，做 3 对 2 的交叉律动）
+    if (s===8 || (s===13 && I > .3)){
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(96, t);
+      o.frequency.exponentialRampToValueAtTime(52, t+.22);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.5, t+.006);
+      g.gain.exponentialRampToValueAtTime(.001, t+.3);
+      o.connect(g); g.connect(M); o.start(t); o.stop(t+.32);
+    }
+    // kora 竖琴琶音（五声音阶，热度上来才浮现）
+    if (I > .18 && (s===1 || s===5 || s===9 || s===13)){
+      const pent = [0, 3, 5, 7, 10];
+      const n = root + 24 + pent[(step/4|0) % 5];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = "triangle"; o.frequency.value = this.mtof(n); o.detune.value = 6;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.11, t+.003);
+      g.gain.exponentialRampToValueAtTime(.0008, t+.4);
+      o.connect(g); g.connect(M); o.start(t); o.stop(t+.42);
+    }
+    // bass
+    if (s===0 || s===3 || s===6 || s===8 || s===11 || s===14){
+      const note = root + (s===8 ? 7 : (s===11 ? 5 : 0));
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      const f = this.ctx.createBiquadFilter();
+      f.type = "lowpass"; f.frequency.setValueAtTime(420, t);
+      f.frequency.exponentialRampToValueAtTime(180, t+.24);
+      o.type = "sawtooth"; o.frequency.value = this.mtof(note-12);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.5, t+.01);
+      g.gain.exponentialRampToValueAtTime(.001, t+.30);
+      o.connect(f); f.connect(g); g.connect(M); o.start(t); o.stop(t+.34);
+    }
+    // highlife 吉他分解和弦
+    if (s%2===0){
+      const n = chord[(s/2)%3] + (s%8===0 ? 12 : 0);
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = "triangle"; o.frequency.value = this.mtof(n);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.16, t+.004);
+      g.gain.exponentialRampToValueAtTime(.001, t+.20);
+      o.connect(g); g.connect(M); o.start(t); o.stop(t+.24);
+    }
+    // 铺底 pad（每小节第一拍）
+    if (s===0){
+      for (const n of chord){
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = "sawtooth"; o.frequency.value = this.mtof(n);
+        o.detune.value = rnd(-7,7);
+        const f = this.ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value = 900;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.055, t+.35);
+        g.gain.linearRampToValueAtTime(0, t+1.6);
+        o.connect(f); f.connect(g); g.connect(M); o.start(t); o.stop(t+1.7);
+      }
+    }
+    // 电子层：热搜压力上来才出现
+    if (I > .38 && s%2===0){
+      const n = chord[(s/2)%3] + 24;
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      const f = this.ctx.createBiquadFilter(); f.type="lowpass";
+      f.frequency.setValueAtTime(1600 + I*2600, t);
+      f.frequency.exponentialRampToValueAtTime(700, t+.1);
+      o.type = "square"; o.frequency.value = this.mtof(n);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.055*I, t+.004);
+      g.gain.exponentialRampToValueAtTime(.001, t+.12);
+      o.connect(f); f.connect(g); g.connect(M); o.start(t); o.stop(t+.15);
+    }
+    if (I > .72 && (s===0)){
+      this.noiseFrom(t, .7, .10, 400, 4000);
+    }
+  },
+  noiseFrom(t, dur, vol, f0, f1){
+    const c = this.ctx, s = c.createBufferSource();
+    s.buffer = this.noiseBuf; s.loop = true;
+    const f = c.createBiquadFilter(); f.type = "bandpass"; f.Q.value = .9;
+    f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t+dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+dur*.3);
+    g.gain.exponentialRampToValueAtTime(.0008, t+dur);
+    s.connect(f); f.connect(g); g.connect(this.music);
+    s.start(t, Math.random()); s.stop(t+dur+.05);
+  },
+
+  /* ---- 音效 ---- */
+  sprayLevel(v){
+    if (!this.ready) return;
+    const g = this.sprayGain.gain, t = this.ctx.currentTime;
+    g.setTargetAtTime(clamp(v,0,.34), t, .03);
+    if (this.sprayFilter) this.sprayFilter.frequency.setTargetAtTime(v>0? 2600+Math.random()*300 : 1200, t, .05);
+  },
+  play(name, arg){
+    if (!this.ready || this.muted) return;
+    const t = this.ctx.currentTime;
+    switch(name){
+      case "jump":    this.tone(t,"triangle",260,430,.12,.13); break;
+      case "land":    this.noise(t,.09,.16,"lowpass",520,1); break;
+      case "switch":  this.tone(t,"square",880,1320,.07,.09); break;
+      case "wrench":
+        this.tone(t,"square",320,120,.10,.16);
+        this.noise(t,.13,.28,"bandpass",2600,1.4); break;
+      case "drill":
+        this.noise(t,.05,.20,"bandpass",3200,2.2);
+        this.tone(t,"square",900,520,.04,.05); break;
+      case "gatling":    // 加特林层：与钻头声叠加形成"钻墙+弹幕"复合音
+        this.noise(t,.03,.16,"highpass",1400,.8);
+        this.tone(t,"sawtooth",180,90,.05,.10); break;
+      case "sputter":    // 喷气气尽喘振
+        this.noise(t,.30,.18,"bandpass",900,1.4);
+        this.tone(t,"triangle",300,60,.25,.12); break;
+      case "thunder":    // 雷鸣：低频轰 + 宽噪声尾
+        this.tone(t,"sine",70,28,.9,.5);
+        this.noise(t,.9,.22,"lowpass",420,.7); break;
+      case "roar":       // BOSS 登场咆哮
+        this.tone(t,"sawtooth",110,36,1.1,.42);
+        this.tone(t,"square",55,24,1.2,.30);
+        this.noise(t,.8,.25,"lowpass",700,.8); break;
+      case "bugdash":    // 火虫冲刺吱鸣
+        this.tone(t,"square",1400,600,.18,.09); break;
+      case "freon":
+        this.noise(t,.09,.10,"bandpass",3400,1.2); break;
+      case "torch":
+        this.noise(t,.12,.12,"lowpass",900,1); break;
+      case "hit":
+        this.tone(t,"square",420,150,.07,.13);
+        this.noise(t,.07,.22,"bandpass",1800,1.2); break;
+      case "shatter":
+        this.noise(t,.30,.32,"highpass",3600,.8);
+        this.tone(t,"triangle",1500,320,.26,.10); break;
+      case "explode":
+        this.noise(t,.42,.46,"lowpass",1400,.8);
+        this.tone(t,"sine",150,38,.36,.30); break;
+      case "hurt":
+        this.tone(t,"sawtooth",210,70,.30,.26);
+        this.noise(t,.22,.24,"lowpass",700,1); break;
+      case "vent":
+        this.noise(t,.55,.28,"lowpass",700,.8);
+        this.tone(t,"sine",90,42,.5,.22); break;
+      case "fire":
+        this.noise(t,.20,.15,"bandpass",1100,.9); break;
+      case "venom":
+        this.tone(t,"sawtooth",330,120,.14,.12);
+        this.noise(t,.10,.14,"bandpass",520,1.4); break;
+      case "kill":
+        // 击杀反馈：低频闷响 + 高频碎裂，确认感
+        this.tone(t,"sine",180,44,.22,.34);
+        this.noise(t,.24,.30,"highpass",2600,.7);
+        this.noise(t,.16,.20,"bandpass",700,1); break;
+      case "pickup":
+        [0,.07,.14].forEach((d,i)=> this.tone(t+d,"triangle",
+          [660,880,1320][i], null, .18, .12)); break;
+      case "burn":
+        this.noise(t,.30,.18,"lowpass",600,.8);
+        this.tone(t,"sawtooth",90,40,.28,.12); break;
+      case "horn":
+        this.tone(t,"square",392,392,.18,.10);
+        this.tone(t+.02,"square",294,294,.20,.08); break;
+      case "install":
+        this.tone(t,"square",env0(arg,520),env0(arg,360),.08,.10);
+        this.noise(t,.06,.10,"bandpass",3000,2); break;
+      case "vacuum":
+        this.noise(t,.6,.30,"bandpass",600,.6);
+        this.tone(t,"sawtooth",110,340,.5,.12); break;
+      case "win":
+        [0,.11,.22,.36].forEach((d,i)=> this.tone(t+d,"triangle",
+          [523,659,784,1047][i], null, .5, .16)); break;
+      case "lose":
+        [0,.16,.34].forEach((d,i)=> this.tone(t+d,"sawtooth",
+          [330,262,196][i], null, .6, .14)); break;
+    }
+  }
+};
+function env0(v, d){ return v === undefined ? d : v; }
+
+/* ---------- 2. 输入 ---------- */
+const keys = new Set();
+const mouse = { x: V.W/2, y: V.H/2, down:false, right:false };
+const BLOCK = new Set(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","F2"]);
+const isDown = (...c) => c.some(k => keys.has(k));
+
+addEventListener("keydown", e => {
+  if (BLOCK.has(e.code)) e.preventDefault();
+  if (e.repeat) { keys.add(e.code); return; }
+  keys.add(e.code);
+  if (e.code === "F2"){ toggleDebug(); return; }
+  if (e.code === "KeyM"){ toggleMute(); return; }
+  if (state === "title" && (e.code === "Enter" || e.code === "Space")){ startGame(); return; }
+  if (e.code === "KeyR" && state !== "title"){ startGame(); return; }
+  if (e.code === "KeyP" || e.code === "Escape"){
+    if (state === "play") pauseGame(true);
+    else if (state === "paused") pauseGame(false);
+    else if (state === "win" || state === "lose") backToTitle();
+  }
+  if (state === "play" && /^Digit[1-4]$/.test(e.code)) selectWeapon(+e.code.slice(5) - 1);
+});
+addEventListener("keyup", e => keys.delete(e.code));
+addEventListener("blur", () => { keys.clear(); AU.sprayLevel(0); if (state === "play") pauseGame(true); });
+
+function pointerPos(e){
+  const r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * V.W, y: (e.clientY - r.top) / r.height * V.H };
+}
+cv.addEventListener("pointermove", e => { const p = pointerPos(e); mouse.x = p.x; mouse.y = p.y; });
+cv.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  const p = pointerPos(e); mouse.x = p.x; mouse.y = p.y;
+  if (e.button === 0) mouse.down = true;
+  if (e.button === 2) mouse.right = true;
+  AU.init();
+  if (state === "play" && e.button === 2) fireUltimate();
+});
+addEventListener("pointerup", e => {
+  if (e.button === 0) mouse.down = false;
+  if (e.button === 2) mouse.right = false;
+});
+cv.addEventListener("contextmenu", e => e.preventDefault());
+cv.addEventListener("wheel", e => {
+  if (state !== "play") return;
+  e.preventDefault();
+  selectWeapon((weaponIdx + (e.deltaY > 0 ? 1 : -1) + 4) % 4);
+}, { passive:false });
+
+/* ---------- 3. 资源 ---------- */
+function loadImg(src){
+  const im = new Image(); im.ok = false;
+  im.onload = () => im.ok = true;
+  im.onerror = () => im.ok = false;
+  im.src = src; return im;
+}
+// 运行时错误钩子：把首个错误写进 title，便于 headless 诊断
+window.addEventListener("error", function(ev){
+  document.title = "ERR: " + (ev.message || "unknown") + " @line " + (ev.lineno || "?");
+});
+const IMG = {
+  logo:     loadImg("FIRMAN_LogoSheet_trim.png"),
+  wordmark: loadImg("FIRMAN_Wordmark_trim.png"),
+  clear:    loadImg("FIRMAN_Stage_Clear_FINAL_v3.jpg"),
+  // 主角：以 CANON 定版为源出的动作表（1 站立 / 2 跑 A / 3 跑 B / 4 腾空·喷射 / 5 受击）
+  hero: [
+    loadImg("FIRMAN_hero_1.png"), loadImg("FIRMAN_hero_2.png"), loadImg("FIRMAN_hero_3.png"),
+    loadImg("FIRMAN_hero_4.png"), loadImg("FIRMAN_hero_5.png")
+  ],
+  // 怪物：恐怖向立体设定（1 熔岩团 / 2 炉口喷火者 / 3 灰烬散射者 / 4 灰烬幽灵）
+  mon: {
+    blob:     loadImg("FIRMAN_mon_1.png"),
+    spitter:  loadImg("FIRMAN_mon_2.png"),
+    spreader: loadImg("FIRMAN_mon_3.png"),
+    flyer:    loadImg("FIRMAN_mon_4.png")
+  },
+  // BOSS 热浪巨兽（1 站立 / 2 散射焰球 / 3 撞地 / 4 召唤火虫）
+  boss: [
+    loadImg("FIRMAN_boss_1.png"), loadImg("FIRMAN_boss_2.png"),
+    loadImg("FIRMAN_boss_3.png"), loadImg("FIRMAN_boss_4.png")
+  ],
+  // 火虫（1 待命 / 2 冲刺）
+  bug: [ loadImg("FIRMAN_bug_1.png"), loadImg("FIRMAN_bug_2.png") ]
+};
+
+/* ---------- 4. 程序化街景（三层视差，逐段变化） ---------- */
+const BG = {
+  far:null, mid:null, near:null, built:false,
+  W:{ far:2800, mid:3500, near:4400 },
+  P:{ far:.12, mid:.42, near:.68 }
+};
+function mkLayer(w,h){ const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
+function shade(hex,k){
+  const n = parseInt(hex.slice(1),16);
+  const r = clamp(Math.round(((n>>16)&255)*k),0,255);
+  const g = clamp(Math.round(((n>>8)&255)*k),0,255);
+  const b = clamp(Math.round((n&255)*k),0,255);
+  return "rgb("+r+","+g+","+b+")";
+}
+function mixHex(a,b,t){
+  const A = parseInt(a.slice(1),16), B = parseInt(b.slice(1),16);
+  const r = Math.round(lerp((A>>16)&255,(B>>16)&255,t));
+  const g = Math.round(lerp((A>>8)&255,(B>>8)&255,t));
+  const bl = Math.round(lerp(A&255,B&255,t));
+  return "rgb("+r+","+g+","+bl+")";
+}
+/* 平行四边形映射：把单位方块贴到牌面（左端低、右端高），LOGO 随之倾斜 */
+function quadTransform(g, tl, tr, bl){
+  g.setTransform(tr.x-tl.x, tr.y-tl.y, bl.x-tl.x, bl.y-tl.y, tl.x, tl.y);
+}
+function drawFirmanBoard(g, x, y, w, h, th, opts){
+  opts = opts || {};
+  const legs = opts.legs !== false;
+  if (legs){
+    // 落地钢架：两根立柱 + 两道横撑，保证牌面看起来架在楼顶/墙面上
+    const legTop = y + h*0.92 - th*0.4, legBot = 600;
+    g.fillStyle = "rgba(74,68,60,.92)";
+    g.fillRect(x + w*0.14, legTop, 8, legBot - legTop);
+    g.fillRect(x + w*0.80, legTop - th*0.5, 8, legBot - legTop + th*0.5);
+    g.fillStyle = "rgba(40,36,32,.55)";
+    g.fillRect(x + w*0.14 + 8, legTop, 4, legBot - legTop);
+    g.strokeStyle = "rgba(74,68,60,.85)"; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(x + w*0.14, legTop + 40); g.lineTo(x + w*0.80, legTop + 20); g.stroke();
+    g.beginPath(); g.moveTo(x + w*0.14, legTop + 120); g.lineTo(x + w*0.80, legTop + 100); g.stroke();
+  }
+  g.save();
+  quadTransform(g, {x:x, y:y}, {x:x+w, y:y-th}, {x:x, y:y+h});
+  // 外框 + 牌面内框
+  g.fillStyle = "#33404C"; g.fillRect(0,0,1,1);
+  const fx = .014, fy = .022, fw = .972, fh = .956;
+  const face = g.createLinearGradient(0,0,.25,1);
+  face.addColorStop(0, "#F4F0E7");
+  face.addColorStop(1, "#DED6C6");
+  g.fillStyle = face; g.fillRect(fx, fy, fw, fh);
+  // 官方 LOGO 组合：等比铺到内框的 95%，四周留一点印刷边（字标不贴框、斜带不硬切）
+  if (IMG.logo.ok){
+    const ar = IMG.logo.naturalWidth / IMG.logo.naturalHeight;
+    const fit = .955;
+    let uh = fh * fit, uw = uh * ar * h / w;
+    if (uw > fw * fit){ uw = fw * fit; uh = uw * w / (ar * h); }
+    g.save();
+    g.beginPath(); g.rect(fx, fy, fw, fh); g.clip();
+    try { g.filter = "brightness(" + (opts.dark || .92) + ") saturate(1.14) contrast(1.05)"; } catch(e){}
+    g.drawImage(IMG.logo, fx + (fw-uw)/2, fy + (fh-uh)/2, uw, uh);
+    g.restore();
+  }
+  // 牌面内阴影（只压顶部一条，不挡字标）
+  g.fillStyle = "rgba(60,50,40,.09)"; g.fillRect(fx, fy, fw, .028);
+  g.restore();
+}
+function drawLocalSign(g, x, y, w, h, text, bg, fg, rot){
+  g.save();
+  g.translate(x + w/2, y + h/2);
+  g.rotate(rot || 0);
+  g.fillStyle = bg; g.fillRect(-w/2, -h/2, w, h);
+  g.strokeStyle = "rgba(30,36,44,.55)"; g.lineWidth = 2;
+  g.strokeRect(-w/2, -h/2, w, h);
+  g.fillStyle = fg; g.textAlign = "center"; g.textBaseline = "middle";
+  const lines = String(text).split("\n");
+  const fs = Math.min(h/(lines.length*1.32), w/(Math.max(...lines.map(l=>l.length))*0.62));
+  g.font = "800 " + fs.toFixed(1) + "px Arial, 'Microsoft YaHei', sans-serif";
+  lines.forEach((ln,i)=> g.fillText(ln, 0, (i - (lines.length-1)/2) * fs*1.12));
+  g.restore();
+}
+
+/* ---- 近地面小物件 ---- */
+function palm(g, x, base, h){
+  g.save();
+  g.strokeStyle = "#6E5640"; g.lineWidth = 9; g.lineCap = "round";
+  g.beginPath(); g.moveTo(x, base); g.quadraticCurveTo(x + 12, base - h*0.55, x + 26, base - h); g.stroke();
+  g.strokeStyle = "#8A6B4C"; g.lineWidth = 3;
+  for (let i=0;i<7;i++){
+    const t = i/7, px = x + 12*t*t + 26*t, py = base - h*t;
+    g.beginPath(); g.moveTo(px-4, py); g.lineTo(px+4, py); g.stroke();
+  }
+  const cx = x+26, cy = base-h;
+  for (let i=0;i<7;i++){
+    const a = -Math.PI*0.92 + i*(Math.PI*1.84/6);
+    g.strokeStyle = i%2 ? "#3F6B44" : "#4C7C4C"; g.lineWidth = 7;
+    g.beginPath(); g.moveTo(cx,cy);
+    g.quadraticCurveTo(cx + Math.cos(a)*46, cy + Math.sin(a)*30 - 6,
+                       cx + Math.cos(a)*74, cy + Math.sin(a)*54 + 18);
+    g.stroke();
+  }
+  g.fillStyle = "#8A6136";
+  g.beginPath(); g.arc(cx+4, cy+6, 5, 0, TAU); g.fill();
+  g.restore();
+}
+function marketStall(g, x, base, w, R){
+  const h = 96 + R()*46;
+  // 台面
+  g.fillStyle = "#7B5F42"; g.fillRect(x, base-h*0.52, w, 12);
+  g.fillStyle = "#5E4832"; g.fillRect(x+6, base-h*0.52+12, w-12, h*0.52-12);
+  // 支柱
+  g.fillStyle = "#6B5238";
+  g.fillRect(x+4, base-h, 6, h);
+  g.fillRect(x+w-10, base-h, 6, h);
+  // 条纹遮阳篷（Ankara 配色，不用品牌色）
+  const stripes = 9, sw = w/stripes;
+  for (let i=0;i<stripes;i++){
+    g.fillStyle = i%2 ? "#B94B3C" : "#E8DCC2";
+    g.beginPath();
+    g.moveTo(x + i*sw, base-h);
+    g.lineTo(x + (i+1)*sw, base-h);
+    g.lineTo(x + (i+1)*sw + 8, base-h+20 + Math.sin(i*1.7)*6);
+    g.lineTo(x + i*sw - 8, base-h+20 + Math.cos(i*1.3)*6);
+    g.closePath(); g.fill();
+  }
+  // 摊上的果蔬
+  for (let i=0;i<9;i++){
+    const cx = x + 12 + R()*(w-24), cy = base - h*0.52 - 6 - R()*8;
+    g.fillStyle = ["#D9A03A","#C24B2E","#6E9A3C","#E0C24A"][i%4];
+    g.beginPath(); g.arc(cx, cy, 5+R()*3, 0, TAU); g.fill();
+  }
+  // 侧布
+  g.fillStyle = "rgba(120,70,50,.5)";
+  g.fillRect(x+2, base-h+22, 10, h-30);
+}
+function lowWall(g, x, base, w){
+  const h = 62;
+  g.fillStyle = "#B6A184"; g.fillRect(x, base-h, w, h);
+  g.fillStyle = "#C4B197"; g.fillRect(x, base-h, w, 7);
+  g.strokeStyle = "rgba(80,66,52,.35)"; g.lineWidth = 1;
+  for (let i=1;i<w/34;i++){ g.beginPath(); g.moveTo(x+i*34, base-h+8); g.lineTo(x+i*34, base); g.stroke(); }
+  g.fillStyle = "rgba(60,50,40,.18)"; g.fillRect(x, base-10, w, 10);
+}
+function crates(g, x, base, R){
+  for (let i=0;i<3;i++){
+    const w = 34 + R()*16, h = 26 + R()*12;
+    const px = x + i*(w*0.6), py = base - h - i*6;
+    g.fillStyle = i%2 ? "#8A6A44" : "#79593A";
+    g.fillRect(px, py, w, h);
+    g.strokeStyle = "rgba(40,30,20,.5)"; g.lineWidth = 2; g.strokeRect(px, py, w, h);
+    g.beginPath(); g.moveTo(px, py+h*0.4); g.lineTo(px+w, py+h*0.4); g.stroke();
+  }
+}
+
+/* ---- 远景：天际线 + 地标 ---- */
+function buildFar(){
+  const W = BG.W.far, c = mkLayer(W, 720), g = c.getContext("2d");
+  const R = seeded(11);
+  let x = -70;
+  while (x < W){
+    const bw = 80 + R()*170, bh = 100 + R()*250, top = 600 - bh;
+    g.fillStyle = "rgba(104,92,84,.42)";
+    g.fillRect(x, top, bw, bh);
+    if (R() < .35){ g.fillRect(x + bw*0.25, top-16, 7, 16); }
+    if (R() < .25){ g.fillRect(x + bw*0.68, top-9, bw*0.22, 9); }
+    g.fillStyle = "rgba(52,46,42,.20)";
+    for (let yy=top+16; yy<590; yy+=24){
+      for (let xx=x+9; xx<x+bw-10; xx+=17){
+        if (R() < .5) g.fillRect(xx, yy, 8, 11);
+      }
+    }
+    x += bw + 8 + R()*34;
+  }
+  // 远景地标：Lekki-Ikoyi 斜拉桥（单塔扇形拉索），藏在尘霾里
+  g.save(); g.globalAlpha = .5; g.strokeStyle = "#5C5148";
+  const bx = 690, by = 596;
+  g.lineWidth = 9; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx, by-330); g.stroke();
+  g.lineWidth = 5; g.beginPath(); g.moveTo(bx-330, by-46); g.lineTo(bx+360, by-70); g.stroke();
+  g.lineWidth = 1.6;
+  for (let i=0;i<10;i++){
+    const t = i/10;
+    g.beginPath(); g.moveTo(bx, by-320); g.lineTo(bx - 320 + t*640, by - 50 - t*18); g.stroke();
+  }
+  g.lineWidth = 3; g.beginPath(); g.moveTo(bx-330, by-46); g.lineTo(bx-330, by); g.stroke();
+  g.beginPath(); g.moveTo(bx+360, by-70); g.lineTo(bx+360, by); g.stroke();
+  g.restore();
+  // 远景地标：国家艺术剧院圆顶
+  g.save(); g.globalAlpha = .38;
+  const dx = 1980, dy = 596, dr = 150;
+  g.fillStyle = "#7A6A5C";
+  g.beginPath(); g.ellipse(dx, dy, dr, dr*0.62, 0, Math.PI, TAU); g.fill();
+  g.strokeStyle = "rgba(60,52,46,.55)"; g.lineWidth = 2;
+  for (let i=1;i<5;i++){
+    g.beginPath(); g.ellipse(dx, dy, dr*i/5, dr*0.62*i/5, 0, Math.PI, TAU); g.stroke();
+  }
+  g.beginPath(); g.moveTo(dx-dr, dy); g.lineTo(dx+dr, dy); g.stroke();
+  g.restore();
+  BG.far = c;
+}
+
+/* ---- 中景：临街楼房 + 广告牌 + 店招 ---- */
+function buildingBlock(g, x, w, top, color, R){
+  const bottom = 600, H = bottom - top;
+  const grd = g.createLinearGradient(x, top, x+w*0.55, bottom);
+  grd.addColorStop(0, shade(color, 1.12));
+  grd.addColorStop(.55, color);
+  grd.addColorStop(1, shade(color, .72));
+  g.fillStyle = grd; g.fillRect(x, top, w, H);
+  // 侧墙受光（左亮右暗），强化体块
+  g.fillStyle = "rgba(24,18,12,.20)"; g.fillRect(x + w - 20, top, 20, H);
+  g.fillStyle = "rgba(255,246,226,.12)"; g.fillRect(x, top, 9, H);
+  // 檐口 + 女儿墙
+  g.fillStyle = shade(color, 1.18); g.fillRect(x-6, top-11, w+12, 13);
+  g.fillStyle = "rgba(36,28,20,.30)"; g.fillRect(x-6, top+2, w+12, 4);
+  // 窗
+  const cols = Math.max(2, Math.round(w/74));
+  const cw = w/cols;
+  const winBottom = 600 - 150;
+  let floor = 0;
+  for (let yy = top+30; yy < winBottom; yy += 70, floor++){
+    if (floor > 0){
+      g.fillStyle = "rgba(28,22,16,.14)"; g.fillRect(x, yy-13, w, 3);
+    }
+    for (let i=0;i<cols;i++){
+      const wx = x + i*cw + cw*0.20, ww = cw*0.60;
+      const lit = R() < .16;
+      g.fillStyle = lit ? "rgba(255,214,150,.55)" : "rgba(32,38,44,.88)";
+      g.fillRect(wx, yy, ww, 44);
+      g.fillStyle = "rgba(150,180,196,.20)"; g.fillRect(wx, yy, ww, 12);
+      // 玻璃斜向反光
+      g.fillStyle = "rgba(255,255,255,.10)";
+      g.beginPath(); g.moveTo(wx, yy+44); g.lineTo(wx+ww*0.46, yy);
+      g.lineTo(wx+ww*0.64, yy); g.lineTo(wx+ww*0.18, yy+44); g.fill();
+      g.fillStyle = "rgba(18,22,26,.55)"; g.fillRect(wx + ww*0.48, yy, 2, 44);
+      g.strokeStyle = shade(color,.66); g.lineWidth = 2; g.strokeRect(wx, yy, ww, 44);
+      g.fillStyle = shade(color,.84); g.fillRect(wx-3, yy+44, ww+6, 4);
+      // 空调外机
+      if (R() < .20){
+        g.fillStyle = "#A7B2B7"; g.fillRect(wx + ww*0.44, yy+48, 24, 17);
+        g.strokeStyle = "rgba(30,36,42,.6)"; g.lineWidth = 1.4; g.strokeRect(wx+ww*0.44, yy+48, 24, 17);
+        g.fillStyle = "rgba(30,36,42,.45)";
+        g.beginPath(); g.arc(wx + ww*0.44 + 12, yy+56, 5, 0, TAU); g.fill();
+      }
+      // 晾衣
+      if (R() < .08){
+        g.strokeStyle = "rgba(60,54,46,.45)"; g.lineWidth = 1.2;
+        g.beginPath(); g.moveTo(wx-8, yy+6); g.lineTo(wx+ww+8, yy+11); g.stroke();
+        for (let k=0;k<3;k++){
+          g.fillStyle = ["#C4553C","#DCE7EA","#D9A03A"][k%3];
+          g.fillRect(wx + 2 + k*(ww/3), yy+7, 7, 11);
+        }
+      }
+    }
+  }
+  // 楼顶水箱 / 天线
+  if (R() < .45){
+    g.fillStyle = "#7C6A54";
+    g.fillRect(x + w*0.62, top-58, 46, 48);
+    g.beginPath(); g.ellipse(x + w*0.62 + 23, top-58, 23, 8, 0, 0, TAU); g.fill();
+    g.fillStyle = "rgba(40,34,28,.35)"; g.fillRect(x + w*0.62, top-12, 46, 4);
+  }
+  if (R() < .3){
+    g.strokeStyle = "rgba(50,44,38,.7)"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x + w*0.28, top-9); g.lineTo(x + w*0.28, top-52); g.stroke();
+    g.beginPath(); g.moveTo(x + w*0.28 - 12, top-40); g.lineTo(x + w*0.28 + 12, top-40); g.stroke();
+  }
+  // 底层临街：门洞 + 橱窗
+  g.fillStyle = "rgba(26,32,38,.92)"; g.fillRect(x+8, 470, w-16, 130);
+  g.fillStyle = "rgba(120,150,165,.20)"; g.fillRect(x+16, 484, w-32, 78);
+  g.fillStyle = "rgba(200,220,230,.10)"; g.fillRect(x+16, 484, w-32, 24);
+  // 彩色卷帘门（本土店铺常见），打破整条街的单调
+  const shutter = ["#3F6E74","#8C4A38","#6E6A3A","#4A5E7A"][Math.floor(R()*4)];
+  g.fillStyle = shutter; g.globalAlpha = .55;
+  g.fillRect(x + 16, 500, w*0.22, 100);
+  g.globalAlpha = 1;
+  g.strokeStyle = "rgba(20,26,30,.35)"; g.lineWidth = 1.5;
+  for (let sy = 506; sy < 598; sy += 9){
+    g.beginPath(); g.moveTo(x + 16, sy); g.lineTo(x + 16 + w*0.22, sy); g.stroke();
+  }
+  // 门
+  g.fillStyle = "#2E4A52"; g.fillRect(x + w*0.42, 500, 34, 100);
+  g.fillStyle = shade(color, .8); g.fillRect(x + w*0.42 - 3, 496, 40, 5);
+  // 招牌底板
+  g.fillStyle = shade(color, .92); g.fillRect(x+6, 440, w-12, 32);
+  g.fillStyle = "rgba(30,36,44,.25)"; g.fillRect(x+6, 468, w-12, 4);
+  // 遮阳篷（Ankara 条纹）
+  if (R() < .62){
+    const aw = w-16, ax = x+8, ay = 430, stripes = 8, sw = aw/stripes;
+    for (let i=0;i<stripes;i++){
+      g.fillStyle = i%2 ? (R()<.5?"#A8452F":"#2F6B5E") : "#E7DCC4";
+      g.beginPath();
+      g.moveTo(ax + i*sw, ay);
+      g.lineTo(ax + (i+1)*sw, ay);
+      g.lineTo(ax + (i+1)*sw, ay+16);
+      g.quadraticCurveTo(ax + i*sw + sw*0.5, ay+30, ax + i*sw, ay+16);
+      g.closePath(); g.fill();
+    }
+  }
+  // 竖向锈迹
+  for (let i=0;i<3;i++){
+    const rx = x + 10 + R()*(w-20);
+    g.fillStyle = "rgba(90,60,40,.10)";
+    g.fillRect(rx, top + R()*80, 3+R()*5, 60+R()*140);
+  }
+}
+
+function buildMid(){
+  const W = BG.W.mid, c = mkLayer(W, 720), g = c.getContext("2d");
+  const R = seeded(29);
+  const pal = ["#CBB69B","#BFA88D","#D5C3A8","#A98F76","#C2A98D","#C9B294","#B0A390","#9FAE9E","#C0A08C"];
+  let x = -90;
+  while (x < W){
+    const bw = 250 + R()*200;
+    const bh = 140 + R()*250;
+    buildingBlock(g, x, bw, 600-bh, pal[(R()*pal.length)|0], R);
+    x += bw + 10 + R()*20;
+  }
+  // 本地虚构店招（不出现真实品牌）
+  const signs = [
+    [180, 452, 150, 34, "BUKA\nPALACE", "#E4D7B8", "#7A3B22"],
+    [520, 470, 130, 30, "ADIRE\nFABRICS", "#DCE7EA", "#1E4B5E"],
+    [860, 456, 140, 32, "OJOTA\nMOTORS", "#E9DCC0", "#25405C"],
+    [1240, 466, 120, 30, "SUYA\nSPOT", "#B8412C", "#F3E7CC"],
+    [1650, 452, 150, 34, "ANKARA\nHOUSE", "#EFE3C8", "#3E5E3A"],
+    [2010, 470, 130, 28, "PURE\nWATER", "#CFE4EC", "#1B4F63"],
+    [2380, 458, 160, 32, "LEKKI\nPHONES", "#E6D9BE", "#8A3A2A"],
+    [2760, 466, 130, 30, "NAIJA\nBITE", "#D9E7D4", "#2C4E2E"],
+    [3120, 452, 150, 34, "IKEJA\nBOOKS", "#EDE1C6", "#4A3B6B"]
+  ];
+  for (const s of signs) drawLocalSign(g, s[0], s[1], s[2], s[3], s[4], s[5], s[6], (R()-.5)*0.03);
+
+  // FIRMAN 广告牌：官方组合标识按原比例贴满牌面内框，墨色略压深保证远处可读
+  // h = w * 0.6203 让牌面内框宽高比与组合标识一致（1.639），贴满不拉伸不裁切
+  drawFirmanBoard(g, 150, 250, 252, 156, 12);
+  drawFirmanBoard(g, 1190, 232, 264, 164, 14);
+  drawFirmanBoard(g, 2180, 244, 250, 155, 14);
+  drawFirmanBoard(g, 3060, 238, 240, 149, 11);
+  // 店头横幅：官方字标
+  if (IMG.wordmark.ok){
+    g.save();
+    g.translate(1588, 462); g.rotate(-0.01);
+    g.fillStyle = "#EFE6D2"; g.fillRect(-96, -14, 192, 28);
+    g.strokeStyle = "rgba(30,36,44,.35)"; g.strokeRect(-96, -14, 192, 28);
+    const ar = IMG.wordmark.naturalWidth / IMG.wordmark.naturalHeight;
+    const ww = 158, wh = ww/ar;
+    try { g.filter = "brightness(.80) saturate(1.05)"; } catch(e){}
+    g.drawImage(IMG.wordmark, -ww/2, -wh/2, ww, wh);
+    g.restore();
+  }
+  BG.mid = c;
+}
+
+/* ---- 近景：摊位 / 棕榈 / 围墙 / 彩旗 ---- */
+function buildNear(){
+  const W = BG.W.near, c = mkLayer(W, 720), g = c.getContext("2d");
+  const R = seeded(53);
+  let x = -80;
+  while (x < W){
+    const k = R();
+    if (k < .26){ palm(g, x, 598, 130 + R()*90); x += 150 + R()*110; }
+    else if (k < .60){ marketStall(g, x, 598, 150 + R()*90, R); x += 218 + R()*130; }
+    else if (k < .76){ lowWall(g, x, 598, 190 + R()*100); x += 210 + R()*90; }
+    else if (k < .90){ crates(g, x, 598, R); x += 130 + R()*70; }
+    else {
+      // 停放的摩托 / 三轮
+      g.fillStyle = "#4C4A44";
+      g.beginPath(); g.arc(x+16, 592, 12, 0, TAU); g.arc(x+60, 592, 12, 0, TAU); g.fill();
+      g.fillStyle = "#8C5A2E"; g.fillRect(x+12, 566, 52, 16);
+      g.fillStyle = "#B7A78C"; g.fillRect(x+30, 552, 26, 14);
+      x += 120 + R()*60;
+    }
+  }
+  // 彩旗串（Ankara 三角旗，不用任何国旗）
+  for (let bx = 200; bx < W; bx += 520){
+    g.strokeStyle = "rgba(50,44,38,.5)"; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(bx, 470); g.quadraticCurveTo(bx+180, 500, bx+360, 466); g.stroke();
+    for (let i=0;i<12;i++){
+      const t = i/12, px = bx + 360*t, py = 470 + Math.sin(t*Math.PI)*26;
+      g.fillStyle = ["#C4553C","#E3D6B8","#3F6B7A","#D9A03A"][i%4];
+      g.beginPath(); g.moveTo(px, py); g.lineTo(px+13, py); g.lineTo(px+6.5, py+17); g.closePath(); g.fill();
+    }
+  }
+  BG.near = c;
+}
+function buildBackground(){ buildFar(); buildMid(); buildNear(); BG.built = true; }
+
+/* ---- 天空：阴郁热浪 → 通关品牌蓝 ---- */
+const motes = [];
+for (let i=0;i<70;i++) motes.push({ x: Math.random()*V.W, y: Math.random()*V.H, s: rnd(.6,2.4), v: rnd(4,18), p: Math.random()*TAU });
+function drawSky(t){
+  const cl = Number.isFinite(clearFade) ? clearFade : 0;
+  const df = Number.isFinite(doomFade) ? doomFade : 0;
+  const g = ctx;
+  const grd = g.createLinearGradient(0,0,0,V.H*0.92);
+  // 正常：阴郁热浪 → 通关品牌蓝；失败：再混入末日炼狱色（热浪吞城）
+  grd.addColorStop(0,   mixHex(mixHex("#332B33", "#5FBCD9", cl), "#1C0503", df));
+  grd.addColorStop(.42, mixHex(mixHex("#6E5044", "#9BD8EA", cl), "#4A0E06", df));
+  grd.addColorStop(.74, mixHex(mixHex("#B07C4E", "#D6EFF7", cl), "#93230D", df));
+  grd.addColorStop(1,   mixHex(mixHex("#C99A64", "#EDF8FB", cl), "#D9551E", df));
+  g.fillStyle = grd; g.fillRect(0,0,V.W,V.H);
+  // 太阳 / 尘霾中的光斑（失败后膨胀成血色凶日）
+  const sx = 330, sy = 190;
+  const sunR = 34 + df*66;
+  const glow = g.createRadialGradient(sx, sy, 6, sx, sy, 260 + df*140);
+  glow.addColorStop(0, df > .3 ? "rgba(255,120,50,.9)" : (cl > .5 ? "rgba(255,255,240,.85)" : "rgba(255,214,150,.55)"));
+  glow.addColorStop(.35, df > .3 ? "rgba(200,50,20,.45)" : (cl > .5 ? "rgba(200,240,255,.28)" : "rgba(233,161,92,.20)"));
+  glow.addColorStop(1, "rgba(233,161,92,0)");
+  g.fillStyle = glow; g.beginPath(); g.arc(sx, sy, 260 + df*140, 0, TAU); g.fill();
+  g.fillStyle = df > .3 ? "rgba(255,86,30,.95)" : (cl > .5 ? "rgba(255,255,245,.9)" : "rgba(255,226,175,.55)");
+  g.beginPath(); g.arc(sx, sy, sunR, 0, TAU); g.fill();
+
+  // 远处升腾的烟柱（热浪吞城的视觉预告；失败后浓黑遮天）
+  for (let i=0;i<3;i++){
+    const bx = 520 + i*760 + Math.sin(t*.2 + i)*30;
+    const a = (1 - cl) * (.30 + df*.5);
+    if (a <= 0) continue;
+    for (let k=0;k<9;k++){
+      const yy = 300 - k*26;
+      const rr = 40 + k*13;
+      g.fillStyle = (k < 3 && df > .3)
+        ? "rgba(255," + (90 - k*14) + ",30," + (a * (1 - k/11)).toFixed(3) + ")"
+        : "rgba(78,56,44," + (a * (1 - k/11)).toFixed(3) + ")";
+      g.beginPath();
+      g.ellipse(bx + Math.sin(t*.5 + k*.7 + i)*24, yy, rr, rr*.72, 0, 0, TAU);
+      g.fill();
+    }
+  }
+  // 热浪霾带
+  if (cl < .9){
+    for (let i=0;i<5;i++){
+      const yy = 340 + i*46;
+      g.fillStyle = "rgba(240,190,130," + ((.05 - i*.008) * (1-cl)).toFixed(3) + ")";
+      g.fillRect(0, yy + Math.sin(t*.6 + i)*4, V.W, 26 - i*3);
+    }
+  }
+  // 飘浮余烬
+  for (const m of motes){
+    m.x -= m.v * 0.016 * (1 + m.s*0.4);
+    if (m.x < -10){ m.x = V.W + 10; m.y = Math.random()*V.H; }
+    const a = (0.30 + 0.3*Math.sin(t*2 + m.p)) * (1 - cl*.6);
+    g.fillStyle = cl > .5 ? "rgba(255,255,255," + a.toFixed(2) + ")" : "rgba(255,168,96," + a.toFixed(2) + ")";
+    g.beginPath(); g.arc(m.x, m.y + Math.sin(t*1.4 + m.p)*8, m.s, 0, TAU); g.fill();
+  }
+}
+
+/* ---- 视差层 ---- */
+function drawLayer(img, p){
+  if (!img) return;
+  const off = -cam * p;
+  ctx.drawImage(img, off, 0);
+}
+
+/* ---------- 5. 关卡数据 ---------- */
+const LEVEL = {
+  // 高处平台（单向：可从下方穿过、落在上面）
+  platforms: [
+    { x:  540, y: 448, w: 215, kind: "awning"   },
+    { x: 1015, y: 398, w: 255, kind: "balcony"  },
+    { x: 1545, y: 462, w: 235, kind: "awning"   },
+    { x: 2125, y: 366, w: 300, kind: "scaffold" },
+    { x: 2705, y: 432, w: 230, kind: "balcony"  },
+    { x: 3230, y: 338, w: 320, kind: "scaffold" },
+    { x: 3800, y: 446, w: 240, kind: "awning"   },
+    { x: 4330, y: 396, w: 265, kind: "balcony"  },
+    { x: 4770, y: 336, w: 300, kind: "roof"     }
+  ],
+  // 实体障碍：损毁车辆 / 堵车车流 / 集装箱（可站上，可挡火焰弹）
+  vehicles: [
+    { x:  755, y: 492, w: 245, h: 108, kind: "danfo"  },
+    { x: 1355, y: 522, w: 215, h:  78, kind: "wreck"  },
+    { x: 1875, y: 504, w: 155, h:  96, kind: "keke"   },
+    { x: 2465, y: 488, w: 300, h: 112, kind: "truck"  },
+    { x: 2955, y: 534, w: 195, h:  66, kind: "sedan"  },
+    { x: 3560, y: 492, w: 235, h: 108, kind: "danfo"  },
+    { x: 4095, y: 522, w: 205, h:  78, kind: "wreck"  },
+    { x: 4615, y: 504, w: 165, h:  96, kind: "keke"   }
+  ],
+  vents: [ 1985, 3115, 4475 ],
+  // 敌人分布：地面 + 高处阁楼 / 平台混合
+  spawns: [
+    { t:"blob",     x: 330  },
+    { t:"blob",     x: 650  },
+    { t:"spitter",  x: 1135, y: 398 },
+    { t:"blob",     x: 1230 },
+    { t:"flyer",    x: 1470, y: 350 },
+    { t:"blob",     x: 1710 },
+    { t:"spreader", x: 2210, y: 366 },
+    { t:"blob",     x: 2330 },
+    { t:"flyer",    x: 2620, y: 316 },
+    { t:"blob",     x: 2780 },
+    { t:"spitter",  x: 2860, y: 432 },
+    { t:"spreader", x: 3330, y: 338 },
+    { t:"blob",     x: 3480 },
+    { t:"flyer",    x: 3920, y: 330 },
+    { t:"blob",     x: 3980 },
+    { t:"spitter",  x: 4420, y: 396 },
+    { t:"blob",     x: 4720 },
+    { t:"spreader", x: 4890, y: 336 },
+    { t:"blob",     x: 5060 }
+  ]
+};
+const GROUND = () => CONFIG.world.groundY;
+
+/* ---------- 6. 状态 ---------- */
+let state = "title";
+let player, enemies, pShots, eShots, particles, ventHazards, shockwaves;
+let pickups, traffic, score;
+let boss = null, fireWaves = [];   // BOSS 热浪巨兽 + 地面窜火波
+let siegeOn, siegeT, trafficT;
+// 必须在声明时给默认值：资源未就绪前 loop 已经在跑，undefined 会让 mixHex 产出 NaN 并中断渲染
+let install, cam = 0, timer = 0, elapsed = 0, heatFront = 0, clearFade = 0, doomFade = 0, shake = 0, flash = 0, hitstop = 0;
+// 闪电雷鸣：t 计时，flashT 亮屏窗口，bolt 折线
+let lightning = { t: 0, next: rnd(4, 9), flashT: 0, bolt: null, thundered: false };
+let kills = 0, weaponIdx = 0, aimAngle = 0, toastT = 0, result = null, ultCd = 0, lastShot = 0, runTime = 0;
+let camLook = 0;
+
+function newPlayer(){
+  const P = CONFIG.player;
+  return { x: CONFIG.world.startX, y: GROUND()-P.h, w:P.w, h:P.h, vx:0, vy:0,
+    onGround:true, facing:1, hp:P.hp, gas:P.gasMax, invuln:0, jet:false,
+    anim:0, squash:0, land:0, hurtT:0, firing:false, muzzle:0, step:0 };
+}
+function makeEnemy(s){
+  const e = { type:s.t, x:s.x, y:s.y !== undefined ? s.y : GROUND(),
+    vx:0, vy:0, t:rnd(0,9), cd:rnd(.4,1.6), chill:0, frozen:0, hitFlash:0,
+    dead:false, deadT:0, phase:"idle", phaseT:0, w:54, h:52, hp:1, maxHp:1, home:s.x, homeY:s.y };
+  if (s.t === "blob"){      e.hp = e.maxHp = 7;  e.w = 58; e.h = 52; e.speed = 96; }
+  if (s.t === "spitter"){   e.hp = e.maxHp = 6;  e.w = 52; e.h = 66; e.big = true; }
+  if (s.t === "spreader"){  e.hp = e.maxHp = 13; e.w = 66; e.h = 72; e.big = true; }
+  if (s.t === "flyer"){     e.hp = e.maxHp = 5;  e.w = 48; e.h = 42; }
+  e.baseY = e.y;
+  return e;
+}
+/* ---------- 5.5 BOSS 热浪巨兽：开始安装时登场，三技能轮转 ---------- */
+function spawnBoss(){
+  const bx = Math.min(install.x + 300, CONFIG.world.width - 220);
+  const e = { type:"boss", x: bx, y: GROUND(), vx:0, vy:0, t:0, cd: 1.4,
+    chill:0, frozen:0, hitFlash:0, slow:0, dead:false, deadT:0,
+    phase:"idle", phaseT:0, w:130, h:215, hp:180, maxHp:180, speed:64,
+    big:true, boss:true, anim:0, home:bx, homeY:GROUND(), baseY:GROUND() };
+  enemies.push(e); boss = e;
+  AU.play("roar");
+  toast("⚠ BOSS 热浪巨兽登场！");
+  kick(12); flash = Math.max(flash, .5);
+  spawnP(e.x, GROUND() - 90, "ember", 34, { sp0:90, sp1:340, r:7, g:-120, life:.7 });
+}
+function bossScatter(e){
+  // 散射热焰球：7 连扇形弹幕
+  const ox = e.x, oy = e.y - e.h*0.72;
+  const base = Math.atan2(player.y + player.h*0.5 - oy, player.x + player.w/2 - ox);
+  for (let i = 0; i < 7; i++){
+    const a = base + (i - 3)*0.14;
+    const sp = rnd(330, 440);
+    eShots.push({ x: ox, y: oy, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - 70,
+      r: 11, g: 300, life: 3.4, dmg: 1, kind: "fire", t: 0, spin: 0 });
+  }
+  AU.play("fire"); kick(5);
+}
+function bossGroundFire(e){
+  // 地面窜火：一道沿地面向玩家推进的熔岩波（必须跳过）
+  fireWaves.push({ x: e.x - 70, dir: sign(player.x - e.x) || -1, speed: 380, life: 3.4, tick: 0 });
+  AU.play("explode"); kick(9);
+}
+function makeBug(x, y){
+  return { type:"bug", x, y: y !== undefined ? y : GROUND(), vx:0, vy:0, t: rnd(0,2), cd: rnd(.4,.9),
+    chill:0, frozen:0, hitFlash:0, slow:0, dead:false, deadT:0,
+    phase:"wait", phaseT: rnd(.3,.8), w:46, h:34, hp:5, maxHp:5, speed: 620,
+    home:x, homeY:y, baseY:y, anim:0, dashDir:-1 };
+}
+function bossSummon(e){
+  // 排出火虫：三只快速冲刺的小怪
+  for (let i = 0; i < 3; i++) enemies.push(makeBug(e.x + rnd(-80, 80), GROUND()));
+  AU.play("bugdash");
+}
+function updateBoss(e, dt){
+  const px = player.x + player.w/2;
+  const dx = px - e.x;
+  e.anim += dt;
+  const slowK = e.slow > 0 ? .6 : 1;
+  if (e.phase === "idle" || e.phase === "walk"){
+    if (Math.abs(dx) > 330){ e.x += sign(dx) * e.speed * slowK * dt; e.phase = "walk"; }
+    else e.phase = "idle";
+    e.cd -= dt;
+    if (e.cd <= 0){
+      const r = Math.random();
+      e.phase = r < .38 ? "tele_scatter" : (r < .72 ? "tele_ground" : "tele_summon");
+      e.phaseT = .8;
+      AU.play("fire");
+    }
+  } else {
+    // 蓄力阶段：缓慢逼近停滞，等蓄满释放
+    e.phaseT -= dt;
+    if (e.phaseT <= 0){
+      if (e.phase === "tele_scatter") bossScatter(e);
+      else if (e.phase === "tele_ground") bossGroundFire(e);
+      else bossSummon(e);
+      e.cd = rnd(2.0, 3.0);
+      e.phase = "idle";
+    }
+  }
+}
+function updateBug(e, dt, dx){
+  e.anim += dt;
+  if (e.phase === "wait"){
+    e.phaseT -= dt; e.vx = 0;
+    if (e.phaseT <= 0){ e.phase = "dash"; e.phaseT = .55; e.dashDir = sign(dx) || -1; AU.play("bugdash"); }
+  } else {
+    e.phaseT -= dt;
+    e.x += e.dashDir * e.speed * dt;
+    if (Math.random() < .8) spawnP(e.x - e.dashDir*22, e.y - 12, "flame", 1, { sp0:10, sp1:40, g:-60, life:.25, r:5 });
+    if (e.phaseT <= 0){ e.phase = "wait"; e.phaseT = rnd(.5, 1.0); }
+  }
+  if (player.invuln <= 0 && Math.abs(dx) < (e.w + player.w)*0.42 &&
+      Math.abs((player.y + player.h*0.5) - (e.y - e.h*0.5)) < (e.h + player.h)*0.5){
+    hurtPlayer(1, e.x);
+  }
+}
+function updateFireWaves(dt){
+  for (const fw of fireWaves){
+    fw.life -= dt; fw.tick -= dt; fw.x += fw.dir * fw.speed * dt;
+    if (fw.tick <= 0){
+      fw.tick = .24;
+      if (player.invuln <= 0 && player.onGround && Math.abs(player.x + player.w/2 - fw.x) < 38){
+        hurtPlayer(1, fw.x);
+      }
+      spawnP(fw.x, GROUND(), "lava", 9, { sp0:50, sp1:200, g:-170, life:.5, r:6 });
+    }
+  }
+  fireWaves = fireWaves.filter(f => f.life > 0);
+}
+function resetWorld(){
+  player = newPlayer();
+  const dens = CONFIG.enemyDensity || 1;
+  enemies = [];
+  LEVEL.spawns.forEach((s,i) => {
+    if (dens < 1 && i % 2 === 0) return;
+    if (dens > 1) enemies.push(makeEnemy(s));
+    enemies.push(makeEnemy(s));
+  });
+  pShots = []; eShots = []; particles = []; shockwaves = [];
+  pickups = []; traffic = []; score = 0;
+  boss = null; fireWaves = [];
+  siegeOn = false; siegeT = 0; trafficT = rnd(CONFIG.traffic.minGap, CONFIG.traffic.maxGap);
+  // 障碍车辆：挂上烧毁进度，重开时复位
+  for (const v of LEVEL.vehicles){ v.burn = 0; v.dead = false; }
+  ventHazards = LEVEL.vents.map(x => ({ x, t: rnd(0,3.4), phase:0 }));
+  install = { x: CONFIG.world.installX, progress:0, done:false, temp: CONFIG.job.tempStart, spin:0, bossSpawned:false };
+  cam = 0; camLook = 0; timer = CONFIG.heat.limit; elapsed = 0; runTime = 0;
+  heatFront = CONFIG.world.startX - 300;
+  clearFade = 0; doomFade = 0; shake = 0; flash = 0; hitstop = 0; kills = 0;
+  weaponIdx = 0; aimAngle = 0; ultCd = 0; lastShot = 0; result = null;
+}
+
+/* ---------- 7. 粒子 / 命中效果 ---------- */
+function spawnP(x, y, kind, n, opt){
+  opt = opt || {};
+  for (let i=0;i<n;i++){
+    const a = opt.dir !== undefined ? opt.dir + rnd(-.7,.7) : rnd(0,TAU);
+    const sp = rnd(opt.sp0 || 30, opt.sp1 || 190);
+    const life = rnd(.28, opt.life || .85);
+    particles.push({ x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - rnd(0,60),
+      life, max: life, kind, r: rnd(1.6, opt.r || 5.2), g: opt.g !== undefined ? opt.g : 260,
+      spin: rnd(-6,6), a0: rnd(.5,1) });
+  }
+}
+function bloodPuff(x,y,kind,n){
+  spawnP(x,y,kind==="cold"?"ice":"ember",n,{sp0:60,sp1:260,r:6});
+  spawnP(x,y,"smoke",Math.round(n*.6),{sp0:20,sp1:90,g:-40,life:1.1,r:8});
+}
+function addShake(v){ shake = Math.min(18, Math.max(shake, v)); }
+function kick(v){ shake = Math.min(20, shake + v); }
+
+/* ---------- 8. 物理 ---------- */
+function solidRects(){
+  const out = [];
+  for (const v of LEVEL.vehicles) if (!v.dead) out.push(v);
+  return out;
+}
+function overlaps(a, b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+function clampOutOfSolids(p){
+  for (const s of solidRects()){
+    if (overlaps(p, s)){
+      const prevRight = p.x + p.w - p.vx*(1/60);
+      // 从左右推出
+      if (p.x + p.w/2 < s.x + s.w/2) p.x = s.x - p.w;
+      else p.x = s.x + s.w;
+    }
+  }
+}
+function groundUnder(x, feetY, pad){
+  // 返回脚下可站立的最高平面 y
+  let best = GROUND();
+  for (const pf of LEVEL.platforms){
+    if (x > pf.x - (pad||0) && x < pf.x + pf.w + (pad||0) && pf.y >= feetY - 4) best = Math.min(best, pf.y);
+  }
+  for (const v of LEVEL.vehicles){
+    if (!v.dead && x > v.x && x < v.x + v.w && v.y >= feetY - 4) best = Math.min(best, v.y);
+  }
+  return best;
+}
+
+/* ---------- 9. 敌人攻击 ---------- */
+function enemyFire(x, y, tx, ty, speed, opts){
+  opts = opts || {};
+  const ang = Math.atan2(ty - y, tx - x) + (opts.spread || 0);
+  eShots.push({ x, y, vx: Math.cos(ang)*speed, vy: Math.sin(ang)*speed,
+    r: opts.r || 10, g: opts.g !== undefined ? opts.g : 260, life: opts.life || 3.2,
+    dmg: 1, kind: opts.kind || "fire", t: 0, spin: rnd(0,TAU) });
+  AU.play(opts.kind === "venom" ? "venom" : "fire");
+}
+function fanShot(e){
+  const P = player;
+  const ox = e.x, oy = e.y - e.h*0.55;
+  const base = Math.atan2((P.y + P.h*0.5) - oy, (P.x + P.w/2) - ox);
+  for (let i=-2;i<=2;i++){
+    const a = base + i*0.20;
+    eShots.push({ x: ox, y: oy, vx: Math.cos(a)*330, vy: Math.sin(a)*330,
+      r: 8, g: 150, life: 3.4, dmg: 1, kind: "fire", t: 0, spin: Math.random()*TAU });
+  }
+  AU.play("fire"); kick(3);
+}
+
+/* ---------- 10. 玩家武器 ---------- */
+const WEAPON_ORDER = ["freon", "wrench", "drill", "torch"];
+function selectWeapon(i){
+  weaponIdx = (i + 4) % 4;
+  AU.play("switch");
+  toast("切换：" + CONFIG.weapons[WEAPON_ORDER[weaponIdx]].name);
+}
+function fireUltimate(){
+  if (!player || ultCd > 0) return;
+  const W = CONFIG.weapons.vacuum;
+  if (player.gas < W.gas){ toast("氟利昂不足，无法启动抽真空泵"); return; }
+  player.gas -= W.gas;
+  ultCd = W.cd;
+  shockwaves.push({ x: player.x + player.w/2, y: player.y + player.h*0.55,
+    r: 40, maxR: W.radius, t: 0, dur: .55, hit: new Set() });
+  AU.play("vacuum"); kick(9); flash = Math.max(flash, .22);
+  spawnP(player.x + player.w/2, player.y + player.h*0.55, "cold", 26, { sp0:80, sp1:420, r:7 });
+}
+function coneHit(originX, originY, angle, range, halfAng, dmg, kind){
+  for (const e of enemies){
+    if (e.dead) continue;
+    const ex = e.x, ey = e.y - e.h*0.5;
+    const d = dist(originX, originY, ex, ey);
+    if (d > range) continue;
+    let da = Math.atan2(ey - originY, ex - originX) - angle;
+    while (da > Math.PI) da -= TAU;
+    while (da < -Math.PI) da += TAU;
+    if (Math.abs(da) > halfAng) continue;
+    hitEnemy(e, dmg * (1 - d/range*0.45), kind, Math.cos(angle)*70);
+  }
+}
+function hitEnemy(e, dmg, kind, knock){
+  if (e.dead) return;
+  const mult = e.frozen > 0 ? 1.7 : 1;
+  e.hp -= dmg * mult;
+  e.hitFlash = .16;
+  if (kind === "cold") e.chill = clamp(e.chill + 10, 0, 100);
+  if (kind === "fire") e.chill = Math.max(0, e.chill - 26);
+  if (knock) e.x += knock * 0.02;
+  if (e.hp <= 0) killEnemy(e, kind);
+}
+function killEnemy(e, kind){
+  if (e.dead) return;
+  e.dead = true; e.deadT = 0; kills++;
+  AU.play("kill");   // 击杀确认音：任何击杀方式都给一记低频闷响 + 碎裂
+  if (kind === "cold" || e.frozen > 0){
+    spawnP(e.x, e.y - e.h*0.5, "ice", 22, { sp0:70, sp1:300, r:7 });
+    AU.play("shatter");
+  } else if (kind === "fire" || kind === "burn"){
+    spawnP(e.x, e.y - e.h*0.5, "ember", 20, { sp0:60, sp1:260, r:6 });
+    AU.play("explode");
+  } else {
+    spawnP(e.x, e.y - e.h*0.5, "spark", 18, { sp0:80, sp1:280, r:5 });
+    AU.play("hit");
+  }
+  // BOSS 破奖励：三掉落 + 大额积分
+  if (e.boss){
+    score += 1500;
+    toast("BOSS 热浪巨兽被击破！积分 +1500");
+    dropPickup(e.x - 50, e.y - e.h*0.4);
+    dropPickup(e.x + 50, e.y - e.h*0.4);
+    dropPickup(e.x, e.y - e.h*0.7);
+    spawnP(e.x, e.y - e.h*0.5, "ember", 42, { sp0:120, sp1:400, r:8, g:-60, life:.9 });
+    spawnP(e.x, e.y - e.h*0.5, "lava", 18, { sp0:80, sp1:280, r:6, g:-120, life:.7 });
+    kick(14); flash = Math.max(flash, .6);
+    AU.play("explode"); AU.play("roar");
+    boss = null;
+  }
+  // 大型怪物掉落：血包 / 气包 / 积分奖励
+  if (e.big && !e.boss) dropPickup(e.x, e.y - e.h*0.4);
+  kick(5); hitstop = Math.max(hitstop, .045);
+}
+function dropPickup(x, y){
+  const D = CONFIG.drops;
+  const roll = Math.random();
+  const type = roll < D.bigHp ? "hp" : (roll < D.bigHp + D.bigGas ? "gas" : "score");
+  pickups.push({ x, y, vy: -240, vx: rnd(-60, 60), type, t: 0, grounded:false });
+}
+function updatePickups(dt){
+  const P = player;
+  for (const p of pickups){
+    p.t += dt;
+    if (!p.grounded){
+      p.vy += 900*dt; p.x += p.vx*dt; p.y += p.vy*dt;
+      const gnd = groundUnder(p.x, p.y + 14, 0);
+      if (p.y >= gnd - 14){ p.y = gnd - 14; p.grounded = true; p.vy = 0; p.vx = 0; }
+    }
+    // 磁吸：靠近就走过来
+    const d = dist(p.x, p.y, P.x + P.w/2, P.y + P.h*0.5);
+    if (d < 96 && p.t > .3){
+      p.x = lerp(p.x, P.x + P.w/2, dt*7);
+      p.y = lerp(p.y, P.y + P.h*0.5, dt*7);
+    }
+    if (d < 30){
+      p.t = -1;   // 标记已拾取
+      if (p.type === "hp"){ P.hp = Math.min(CONFIG.player.hp, P.hp + 1); toast("拾取血包 · 生命 " + P.hp + "/" + CONFIG.player.hp); }
+      else if (p.type === "gas"){ P.gas = Math.min(CONFIG.player.gasMax, P.gas + 40); toast("拾取气罐 · 氟利昂补充"); }
+      else { score += CONFIG.drops.scoreVal; toast("积分 +" + CONFIG.drops.scoreVal); }
+      AU.play("pickup");
+      spawnP(p.x, p.y, p.type === "hp" ? "ember" : (p.type === "gas" ? "cold" : "spark"), 8, { sp0:40, sp1:160, r:4 });
+    }
+  }
+  pickups = pickups.filter(p => p.t >= 0 && p.t < 14);
+}
+function drawPickups(){
+  for (const p of pickups){
+    const x = p.x - cam, y = p.y + (p.grounded ? Math.sin(p.t*3)*3 : 0);
+    const t = p.t < .3 ? p.t/.3 : 1;
+    ctx.save();
+    ctx.globalAlpha = t * (p.t > 12 ? (14 - p.t)/2 : 1);
+    // 光晕
+    ctx.globalCompositeOperation = "lighter";
+    const gc = p.type === "hp" ? "rgba(255,90,90," : (p.type === "gas" ? "rgba(130,210,232," : "rgba(255,210,90,");
+    const g = ctx.createRadialGradient(x, y, 2, x, y, 26);
+    g.addColorStop(0, gc + ".5)"); g.addColorStop(1, gc + "0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 26, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    if (p.type === "hp"){
+      ctx.fillStyle = "#F2F2F2"; roundRect(x-11, y-9, 22, 18, 4); ctx.fill();
+      ctx.strokeStyle = "#8E2A22"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "#DC1E2E"; ctx.fillRect(x-2.5, y-6, 5, 12); ctx.fillRect(x-6, y-2.5, 12, 5);
+    } else if (p.type === "gas"){
+      ctx.fillStyle = "#7FB6C6"; roundRect(x-8, y-11, 16, 22, 5); ctx.fill();
+      ctx.strokeStyle = "#2C5866"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "#DC1E2E"; ctx.fillRect(x-8, y-3, 16, 5);
+      ctx.fillStyle = "#C9C0A8"; ctx.fillRect(x-3, y-14, 6, 4);
+      ctx.fillStyle = "#EFF9FF"; ctx.fillRect(x-5, y+1, 3, 7);
+    } else {
+      ctx.save(); ctx.translate(x, y); ctx.rotate(p.t*1.6);
+      ctx.fillStyle = "#E8B44A"; ctx.beginPath();
+      for (let i=0;i<5;i++){ const a = -Math.PI/2 + i*TAU/5;
+        ctx.lineTo(Math.cos(a)*11, Math.sin(a)*11);
+        const a2 = a + TAU/10; ctx.lineTo(Math.cos(a2)*4.5, Math.sin(a2)*4.5); }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "#8A6A1C"; ctx.lineWidth = 1.6; ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = "#FFF3C4"; ctx.font = "800 9px Arial"; ctx.textAlign = "center";
+      ctx.fillText("¥", x, y+3);
+    }
+    ctx.restore();
+  }
+}
+
+/* ---------- 11. 主更新 ---------- */
+function update(dt){
+  const P = CONFIG.player, W = CONFIG.world;
+  elapsed += dt;
+  timer -= dt;
+  heatFront = (W.startX - 300) + (W.installX - W.startX + 520) * clamp(1 - timer/CONFIG.heat.limit, 0, 1);
+  if (ultCd > 0) ultCd -= dt;
+
+  /* --- 瞄准 --- */
+  const mwx = mouse.x + cam, mwy = mouse.y;
+  const mx0 = player.x + player.w/2, my0 = player.y + player.h*0.52;
+  const ax = mwx - mx0, ay = mwy - my0;
+  const fwd = ax * player.facing;
+  const local = fwd < 26 ? 0 : clamp(Math.atan2(ay, fwd), -1.05, 1.05);
+  aimAngle = player.facing > 0 ? local : Math.PI - local;
+
+  /* --- 移动 --- */
+  const left = isDown("KeyA","ArrowLeft"), right = isDown("KeyD","ArrowRight");
+  const dir = (right?1:0) - (left?1:0);
+  if (player.hurtT > 0){
+    // 硬直：保留击退速度，避免贴脸连击
+    player.vx *= (1 - dt*1.2);
+  } else if (dir){
+    player.vx += dir * P.accel * dt;
+    player.vx = clamp(player.vx, -P.speed, P.speed);
+    player.facing = dir;
+  } else {
+    const f = P.friction * dt;
+    player.vx = Math.abs(player.vx) <= f ? 0 : player.vx - sign(player.vx)*f;
+  }
+  player.anim += Math.abs(player.vx) * dt * 0.045;
+
+  /* --- 跳跃 / 喷气背包（与氟利昂共用同一瓶气：气尽立即失效坠落） --- */
+  const jumpHeld = isDown("Space","KeyW","ArrowUp");
+  player.jet = false;
+  if (jumpHeld && player.onGround && !player.jumpLock){
+    player.vy = P.jump; player.onGround = false; player.squash = -.18; player.jumpLock = true;
+    spawnP(player.x + player.w/2, player.y + player.h, "dust", 6, { sp0:20, sp1:90, g:80 });
+    AU.play("jump");
+  } else if (jumpHeld && !player.onGround && player.gas > (player.jetLock ? 18 : 5) && player.vy > -380){
+    player.vy -= P.jetForce * dt;
+    player.vy = Math.max(player.vy, -420);
+    player.gas = Math.max(0, player.gas - P.jetCost*dt);
+    player.jet = true;
+    if (player.jetLock) player.jetLock = false;        // 回气到阈值才解锁
+    spawnP(player.x + player.w/2 + rnd(-6,6), player.y + player.h - 4, "cold", 1, { sp0:20, sp1:90, g:-60, life:.4 });
+  }
+  // 气尽瞬间：立即断喷 + 喘振音效 + 白雾，之后要回气到阈值才允许再次喷气
+  if (player.gas <= 0){
+    if (jumpHeld && !player.onGround && !player.jetLock){
+      AU.play("sputter");
+      spawnP(player.x + player.w/2, player.y + player.h - 6, "cold", 10, { sp0:30, sp1:140, g:-30, life:.5 });
+    }
+    player.jetLock = true;
+  } else if (player.gas >= 18 && player.jetLock){
+    player.jetLock = false;
+  }
+  if (!jumpHeld) player.jumpLock = false;
+  player.gas = Math.min(P.gasMax, player.gas + P.gasRegen*dt);
+  player.vy = Math.min(P.maxFall, player.vy + P.gravity*dt);
+
+  /* --- 水平 + 碰撞 --- */
+  const oldX = player.x;
+  player.x = clamp(player.x + player.vx*dt, 0, W.width - player.w);
+  for (const s of solidRects()){
+    if (overlaps(player, s)){
+      const pv = player.vx;
+      if (oldX + player.w <= s.x + 2) player.x = s.x - player.w;
+      else if (oldX >= s.x + s.w - 2) player.x = s.x + s.w;
+      else player.x = player.x + player.w/2 < s.x + s.w/2 ? s.x - player.w : s.x + s.w;
+      player.vx = 0;
+    }
+  }
+
+  /* --- 垂直 + 落地 --- */
+  player.y += player.vy * dt;
+  // 顶部空气墙：喷气背包最多飞到画面上沿附近，不许飞出屏幕
+  if (player.y < P.ceiling){
+    player.y = P.ceiling;
+    if (player.vy < 0) player.vy = 0;
+    player.jet = false;
+    if (Math.random() < .2) spawnP(player.x + player.w/2 + rnd(-16,16), player.y + player.h, "cold", 1, { sp0:20, sp1:70, g:-40, life:.3 });
+  }
+  let landed = false;
+  const prevFeet = player.y + player.h - player.vy*dt;
+  if (player.y + player.h >= GROUND()){ player.y = GROUND() - player.h; landed = true; }
+  else {
+    for (const pf of LEVEL.platforms){
+      if (player.vy >= 0 && prevFeet <= pf.y + 6 && player.y + player.h >= pf.y &&
+          player.x + player.w > pf.x + 4 && player.x < pf.x + pf.w - 4){
+        player.y = pf.y - player.h; landed = true; break;
+      }
+    }
+    if (!landed) for (const v of LEVEL.vehicles){
+      if (player.vy >= 0 && prevFeet <= v.y + 6 && player.y + player.h >= v.y &&
+          player.x + player.w > v.x + 4 && player.x < v.x + v.w - 4){
+        player.y = v.y - player.h; landed = true; break;
+      }
+    }
+  }
+  if (landed){
+    if (!player.onGround){
+      player.squash = .2; player.land = .16;
+      spawnP(player.x + player.w/2, player.y + player.h, "dust", 5, { sp0:16, sp1:70, g:60, life:.4 });
+      AU.play("land");
+    }
+    player.onGround = true; player.vy = 0;
+  } else player.onGround = false;
+  player.squash = lerp(player.squash, 0, dt*9);
+  if (player.invuln > 0) player.invuln -= dt;
+  if (player.hurtT > 0) player.hurtT -= dt;
+
+  /* --- 开火 --- */
+  const wp = CONFIG.weapons[WEAPON_ORDER[weaponIdx]];
+  player.firing = false;
+  if (mouse.down){
+    player.firing = true;
+    const ox = player.x + player.w/2 + Math.cos(aimAngle)*26;
+    const oy = player.y + player.h*0.5 + Math.sin(aimAngle)*20;
+    if (WEAPON_ORDER[weaponIdx] === "freon"){
+      const cost = (wp.cost || 12)*dt;
+      if (player.gas > 1){
+        player.gas = Math.max(0, player.gas - cost);
+        coneHit(ox, oy, aimAngle, wp.range, .38, wp.dps*dt, "cold");
+        for (const e of enemies){
+          if (e.dead) continue;
+          const d = dist(ox, oy, e.x, e.y - e.h*0.5);
+          if (d < wp.range && Math.abs(((Math.atan2(e.y-e.h*0.5-oy, e.x-ox) - aimAngle + Math.PI*3) % TAU) - Math.PI) < .42){
+            e.chill = clamp(e.chill + wp.chill*dt, 0, 100);
+            if (e.chill >= 100 && e.frozen <= 0){ e.frozen = 2.4; e.chill = 60; AU.play("shatter"); }
+          }
+        }
+        // 冷冻消除敌方火焰弹（毒液弹免疫冷冻，只能躲或跳）
+        for (const b of eShots){
+          if (b.kind !== "fire" || b.life <= 0) continue;
+          const d = dist(ox, oy, b.x, b.y);
+          if (d < wp.range*1.06 && Math.abs(((Math.atan2(b.y-oy, b.x-ox) - aimAngle + Math.PI*3) % TAU) - Math.PI) < .46){
+            b.life = 0;
+            spawnP(b.x, b.y, "ice", 5, { sp0:30, sp1:120, r:4, g:200, life:.5 });
+          }
+        }
+        // 短暂冻结迎面来车（只减速冰封，不毁坏）
+        for (const car of traffic){
+          const ccx = car.x + car.w/2, ccy = car.y - car.h*0.5;
+          const d = dist(ox, oy, ccx, ccy);
+          if (d < wp.range + car.w*0.5 && Math.abs(((Math.atan2(ccy-oy, ccx-ox) - aimAngle + Math.PI*3) % TAU) - Math.PI) < .5){
+            if (car.freeze <= 0) spawnP(ccx, ccy, "ice", 8, { sp0:40, sp1:160, r:4, g:100, life:.5 });
+            car.freeze = Math.max(car.freeze || 0, 1.4);
+          }
+        }
+        for (let k=0;k<3;k++){
+          const dd = rnd(18, wp.range*0.95);
+          spawnP(ox + Math.cos(aimAngle)*dd + rnd(-14,14),
+                 oy + Math.sin(aimAngle)*dd + rnd(-16,16),
+                 "cold", 1, { dir: aimAngle, sp0:160, sp1:520, g:-20, life:.42, r:6 });
+        }
+        AU.sprayLevel(.22);
+        if (Math.random() < .25) AU.play("freon");
+      } else AU.sprayLevel(0);
+    } else AU.sprayLevel(0);
+
+    if (WEAPON_ORDER[weaponIdx] === "wrench" && player.muzzle <= 0){
+      player.muzzle = wp.cd;
+      let hitAny = false;
+      for (const e of enemies){
+        if (e.dead) continue;
+        const d = dist(player.x + player.w/2, player.y + player.h*0.5, e.x, e.y - e.h*0.5);
+        const dirOk = (e.x - player.x) * player.facing > -20;
+        if (d < wp.range && dirOk){
+          hitEnemy(e, wp.dmg, "blunt", 0);
+          e.x += player.facing * 26; hitAny = true;
+        }
+      }
+      spawnP(player.x + player.w/2 + player.facing*40, player.y + player.h*0.45, "spark", 8, { dir: aimAngle, sp0:80, sp1:220, r:4 });
+      AU.play("wrench"); if (hitAny){ kick(4); hitstop = Math.max(hitstop, .035); }
+    }
+    if (WEAPON_ORDER[weaponIdx] === "drill" && player.muzzle <= 0 && player.gas >= wp.gas){
+      player.muzzle = wp.cd; player.gas -= wp.gas;
+      const spread = rnd(-.035,.035);
+      pShots.push({ x: ox, y: oy, vx: Math.cos(aimAngle+spread)*wp.speed, vy: Math.sin(aimAngle+spread)*wp.speed,
+        dmg: wp.dmg, life: wp.range/wp.speed, kind: "drill" });
+      // 后坐力：沿瞄准反方向把人顶回去 + 枪口火光 + 微震屏
+      player.vx -= Math.cos(aimAngle) * (wp.recoil || 110);
+      if (player.onGround) player.vx *= 1;
+      spawnP(ox, oy, "spark", 5, { dir: aimAngle, sp0:140, sp1:340, r:3.4, life:.22 });
+      spawnP(ox, oy, "flame", 2, { dir: aimAngle, sp0:60, sp1:160, g:-40, life:.18, r:4 });
+      AU.play("drill"); AU.play("gatling"); kick(1.8);
+    }
+    if (WEAPON_ORDER[weaponIdx] === "torch"){
+      if (player.gas > 1){
+        player.gas = Math.max(0, player.gas - wp.gas*dt);
+        // 宽锥群攻：短距离内一片全烧
+        coneHit(ox, oy, aimAngle, wp.range, wp.cone || .58, wp.dps*dt, "fire");
+        for (const e of enemies){
+          if (!e.dead && dist(ox,oy,e.x,e.y-e.h*0.5) < wp.range) e.burning = .6;
+        }
+        // 烧毁障碍车辆：按车体面积决定需要烧多久
+        for (const v of LEVEL.vehicles){
+          if (v.dead) continue;
+          const vcx = v.x + v.w/2, vcy = v.y + v.h/2;
+          const d = dist(ox, oy, vcx, vcy);
+          if (d > wp.range + v.w*0.5) continue;
+          const da = Math.atan2(vcy - oy, vcx - ox) - aimAngle;
+          if (Math.abs(((da + Math.PI*3) % TAU) - Math.PI) > (wp.cone || .58) + .12) continue;
+          v.burn += dt;
+          if (Math.random() < .5) spawnP(vcx + rnd(-v.w*0.4, v.w*0.4), v.y + rnd(0, v.h*0.5), "flame", 1, { g:-160, life:.4, r:6 });
+          const need = Math.max(1.6, v.w * v.h / 2600);   // 大车烧得久，小车烧得快
+          if (v.burn >= need){
+            v.dead = true;
+            spawnP(vcx, v.y + v.h*0.4, "ember", 26, { sp0:60, sp1:280, r:6 });
+            spawnP(vcx, v.y, "smoke", 10, { sp0:20, sp1:80, g:-60, life:1.4, r:12 });
+            AU.play("burn"); kick(6); flash = Math.max(flash, .18);
+            toast("障碍已烧穿！通路打开");
+          }
+        }
+        for (let k=0;k<3;k++){
+          const dd = rnd(10, wp.range*0.9);
+          spawnP(ox + Math.cos(aimAngle)*dd + rnd(-12,12), oy + Math.sin(aimAngle)*dd + rnd(-14,14),
+            "flame", 1, { dir: aimAngle, sp0:160, sp1:380, g:-150, life:.34, r:8 });
+        }
+        AU.sprayLevel(.10);
+      } else AU.sprayLevel(0);
+    }
+  } else AU.sprayLevel(0);
+  if (player.muzzle > 0) player.muzzle -= dt;
+
+  /* --- 玩家子弹 --- */
+  for (const b of pShots){
+    b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
+    for (const s of solidRects()){
+      if (b.x > s.x && b.x < s.x + s.w && b.y > s.y && b.y < s.y + s.h){
+        b.life = 0; spawnP(b.x, b.y, "spark", 4, { sp0:40, sp1:160, r:3 }); break;
+      }
+    }
+    if (b.life <= 0) continue;
+    for (const e of enemies){
+      if (e.dead) continue;
+      if (b.x > e.x - e.w/2 && b.x < e.x + e.w/2 && b.y > e.y - e.h && b.y < e.y){
+        hitEnemy(e, b.dmg, "drill", 0);
+        // 钻枪弹特性：受击闪烁 + 短暂减速（子弹无限但威力弱，靠压制节奏取胜）
+        e.hitFlash = Math.max(e.hitFlash || 0, .16);
+        e.slow = Math.max(e.slow || 0, .38);
+        spawnP(b.x, b.y, "spark", 5, { sp0:40, sp1:180, r:3 });
+        AU.play("hit"); b.life = 0; break;
+      }
+    }
+    if (b.life <= 0) continue;
+    // 钻枪打障碍车辆：闪烁 + 毁伤累积（可打掉，但没有焊枪快）
+    for (const v of LEVEL.vehicles){
+      if (v.dead) continue;
+      if (b.x > v.x && b.x < v.x + v.w && b.y > v.y && b.y < v.y + v.h){
+        v.dmgFlash = Math.max(v.dmgFlash || 0, .18);
+        const need = Math.max(1.6, v.w*v.h/2600);
+        v.burn = (v.burn || 0) + dt*0.0 + (b.dmg*0.004);
+        spawnP(b.x, b.y, "spark", 6, { sp0:60, sp1:220, r:3, g:300 });
+        spawnP(b.x, b.y, "smoke", 2, { sp0:10, sp1:40, g:-60, life:.6 });
+        AU.play("hit");
+        b.life = 0; break;
+      }
+    }
+  }
+  pShots = pShots.filter(b => b.life > 0);
+
+  /* --- 抽真空冲击波 --- */
+  for (const sw of shockwaves){
+    sw.t += dt;
+    const k = sw.t/sw.dur;
+    sw.r = lerp(40, sw.maxR, Math.min(1, k*1.15));
+    for (const e of enemies){
+      if (e.dead || sw.hit.has(e)) continue;
+      if (dist(sw.x, sw.y, e.x, e.y - e.h*0.5) < sw.r){
+        sw.hit.add(e);
+        hitEnemy(e, CONFIG.weapons.vacuum.dmg, "cold", 0);
+        e.chill = 100; e.frozen = 2.0;
+      }
+    }
+    for (const es of eShots){
+      if (dist(sw.x, sw.y, es.x, es.y) < sw.r) es.life = 0;
+    }
+  }
+  shockwaves = shockwaves.filter(sw => sw.t < sw.dur + .1);
+
+  /* --- 敌人 --- */
+  for (const e of enemies){
+    if (e.dead){ e.deadT += dt; continue; }
+    const dx = (player.x + player.w/2) - e.x;
+    const adx = Math.abs(dx);
+    const dy = (player.y + player.h*0.5) - (e.y - e.h*0.5);
+    e.t += dt;
+    if (e.hitFlash > 0) e.hitFlash -= dt;
+    if (e.slow > 0) e.slow = Math.max(0, e.slow - dt);
+    const slowK = e.slow > 0 ? .5 : 1;   // 钻枪命中造成的短暂迟滞
+    if (e.burning > 0){ e.burning -= dt; if (Math.random()<.3) spawnP(e.x, e.y-e.h*0.6, "flame", 1, {g:-120, life:.4}); }
+    if (e.frozen > 0){
+      e.frozen -= dt;
+      if (Math.random() < .12) spawnP(e.x, e.y-e.h*0.5, "ice", 1, { sp0:10, sp1:40, g:100, life:.5 });
+      continue;
+    }
+    if (e.chill > 0 && e.frozen <= 0) e.chill = Math.max(0, e.chill - 6*dt);
+    if (adx > 1050 && e.type !== "boss"){ continue; }   // 太远的敌人先不参与（BOSS 不受此限）
+
+    if (e.type === "boss"){ updateBoss(e, dt); continue; }
+    if (e.type === "bug"){ updateBug(e, dt, dx); continue; }
+    if (e.type === "blob"){
+      if (adx < 330 && Math.abs(dy) < 170){
+        e.vx = sign(dx) * e.speed * 1.7;
+        if (e.cd <= 0){ e.vy = -420; e.cd = rnd(1.6,2.6); }
+      } else {
+        e.vx = e.t % 4 < 2 ? e.speed*0.55 : -e.speed*0.55;
+        if (Math.abs(e.x - e.home) > 150) e.vx = sign(e.home - e.x) * e.speed*0.6;
+      }
+      e.x += e.vx*dt*slowK;
+      e.y += e.vy*dt; e.vy += 1500*dt;
+      const gnd = groundUnder(e.x, e.y, 10);
+      if (e.y >= gnd){ e.y = gnd; e.vy = 0; }
+      // 步态相位：速度越快步频越高（驱动行走摆动动画）
+      e.anim = (e.anim || 0) + dt * (2.2 + Math.abs(e.vx)/26);
+      if (adx < 300 && Math.abs(dy) < 120) e.cd -= dt;
+      // 接触伤害
+      if (player.invuln <= 0 && Math.abs(dx) < (e.w + player.w)*0.42 && Math.abs(dy) < (e.h + player.h)*0.42){
+        hurtPlayer(1, e.x);
+      }
+    }
+    else if (e.type === "spitter" || e.type === "spreader"){
+      const range = e.type === "spitter" ? 760 : 700;
+      if (adx < range && Math.abs(dy) < 300){
+        e.cd -= dt;
+        if (e.cd <= 0 && e.phase === "idle"){
+          e.phase = "charge"; e.phaseT = e.type === "spitter" ? .48 : .62;
+          if (e.type === "spitter") e.alt = !e.alt;   // 进入充能时就定下这一发是火还是毒
+        }
+      }
+      if (e.phase === "charge"){
+        e.phaseT -= dt;
+        if (e.phaseT <= 0){
+          if (e.type === "spitter"){
+            // 火焰弹 / 毒液弹交替：毒液更重、抛物线更弯，不能被氟利昂冷冻消除
+            if (e.alt) enemyFire(e.x, e.y - e.h*0.55, player.x + player.w/2, player.y + player.h*0.5, 340,
+              { g: 420, kind: "venom", r: 9, life: 3.6 });
+            else enemyFire(e.x, e.y - e.h*0.55, player.x + player.w/2, player.y + player.h*0.5, 400, { g: 220 });
+          }
+          else fanShot(e);
+          e.recoil = 1;                       // 开火后坐（驱动绘制层的后倾/压缩）
+          e.cd = e.type === "spitter" ? rnd(1.7, 2.5) : rnd(2.4, 3.2);
+          e.phase = "idle";
+        }
+      }
+      if (e.recoil > 0) e.recoil = Math.max(0, e.recoil - dt*3.2);
+    }
+    else if (e.type === "flyer"){
+      const hx = e.x, hy = e.baseY + Math.sin(e.t*1.6)*16;
+      if (e.phase === "idle"){
+        e.x += Math.sin(e.t*.7)*40*dt;
+        e.y = hy;
+        e.cd -= dt;
+        if (e.cd <= 0 && adx < 620){ e.phase = "wind"; e.phaseT = .5; }
+      } else if (e.phase === "wind"){
+        e.phaseT -= dt;
+        e.y = hy - 10;
+        if (e.phaseT <= 0){
+          e.phase = "dive"; e.phaseT = 1.1;
+          const a = Math.atan2(player.y + player.h*0.45 - e.y, player.x + player.w/2 - e.x);
+          e.diveVX = Math.cos(a)*520; e.diveVY = Math.sin(a)*520;
+          AU.play("fire");
+        }
+      } else if (e.phase === "dive"){
+        e.phaseT -= dt;
+        e.x += e.diveVX*dt*slowK; e.y += e.diveVY*dt*slowK;
+        if (Math.random()<.6) spawnP(e.x, e.y, "ember", 1, {g:0, life:.35});
+        if (player.invuln <= 0 && dist(e.x, e.y, player.x+player.w/2, player.y+player.h*0.5) < 46){
+          hurtPlayer(1, e.x);
+        }
+        if (e.phaseT <= 0){ e.phase = "return"; e.phaseT = .9; }
+      } else {
+        e.phaseT -= dt;
+        e.x = lerp(e.x, e.home + Math.sin(e.t)*40, dt*2.2);
+        e.y = lerp(e.y, e.baseY, dt*2.2);
+        if (e.phaseT <= 0){ e.phase = "idle"; e.cd = rnd(2.4,3.4); }
+      }
+    }
+  }
+  enemies = enemies.filter(e => !e.dead || e.deadT < 1.2);
+
+  /* --- 岩浆喷口 --- */
+  for (const v of ventHazards){
+    v.t += dt;
+    const cyc = v.t % 3.6;
+    const near = Math.abs((player.x + player.w/2) - v.x) < 900;
+    if (!near) continue;
+    if (cyc > 2.2 && cyc < 3.5){
+      const h = 150;
+      const pxc = player.x + player.w/2;
+      if (Math.abs(pxc - v.x) < 52 && player.y + player.h > GROUND() - h){
+        if (player.invuln <= 0) hurtPlayer(1, v.x);
+      }
+      if (Math.random() < .5) spawnP(v.x + rnd(-22,22), GROUND() - rnd(0,h), "lava", 1, { g:-320, sp0:40, sp1:140, life:.6 });
+    }
+  }
+
+  /* --- 热浪 --- */
+  if (player.x + player.w < heatFront && player.invuln <= 0){
+    hurtPlayer(1, player.x - 40);
+    player.invuln = CONFIG.heat.burnInterval;
+    toast("热浪逼近！继续向右推进");
+  }
+
+  /* --- 敌人子弹 --- */
+  for (const b of eShots){
+    b.t += dt;
+    b.vy += b.g * dt;
+    b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
+    // 飞行尾迹：火焰弹随机掉落余烬（叠加在绘制层的湍流焰尾上）
+    if (b.kind !== "venom" && Math.random() < .35){
+      spawnP(b.x - b.vx*0.012, b.y - b.vy*0.012, "ember", 1,
+        { sp0:6, sp1:30, g:-60, life:.30, r:2.4 });
+    }
+    if (b.y > GROUND() - 2){
+      b.life = 0;
+      if (b.kind === "venom"){
+        spawnP(b.x, GROUND(), "venom", 6, { sp0:30, sp1:130, g:400, life:.5, r:4 });
+      } else {
+        // 落地熔溅：更绚丽 —— 火花扇形 + 熔池火舌
+        spawnP(b.x, GROUND(), "ember", 10, { sp0:60, sp1:220, g:500, life:.45, r:3.4 });
+        spawnP(b.x, GROUND(), "lava", 5, { sp0:20, sp1:90, g:-90, life:.5, r:5 });
+        if (b.kind === "lava") spawnP(b.x, GROUND(), "lava", 8, { sp0:60, sp1:200, g:-120, life:.6, r:6 });
+      }
+    }
+    for (const s of solidRects()){
+      if (b.x > s.x && b.x < s.x + s.w && b.y > s.y && b.y < s.y + s.h){
+        b.life = 0; spawnP(b.x, b.y, "ember", 5, { sp0:40, sp1:150 }); AU.play("hit"); break;
+      }
+    }
+    if (b.life <= 0) continue;
+    if (player.invuln <= 0 &&
+        b.x > player.x - b.r && b.x < player.x + player.w + b.r &&
+        b.y > player.y - b.r && b.y < player.y + player.h + b.r){
+      b.life = 0; hurtPlayer(1, b.x);
+    }
+  }
+  eShots = eShots.filter(b => b.life > 0);
+
+  /* --- 粒子 --- */
+  for (const p of particles){
+    p.life -= dt; p.vy += p.g*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= (1 - dt*1.4);
+  }
+  particles = particles.filter(p => p.life > 0);
+
+  /* --- 掉落物 --- */
+  updatePickups(dt);
+
+  /* --- 安装工序（关卡冲刺阶段：怪物围攻，会被打断） --- */
+  const near = Math.abs((player.x + player.w/2) - (install.x + 50)) < CONFIG.job.reach;
+  if (near && isDown("KeyE") && !install.done && player.onGround){
+    install.progress += dt / CONFIG.job.holdTime;
+    install.spin += dt*9;
+    // 围攻阶段：一旦开始安装就进入冲刺，怪物从两侧不停涌来
+    if (!siegeOn && install.progress > .04){
+      siegeOn = true; siegeT = 1.0;
+      toast("⚠ 冲刺阶段：热浪生物正在围攻安装点！");
+      AU.play("horn"); kick(7);
+    }
+    // 开始安装的瞬间：BOSS 热浪巨兽登场
+    if (!install.bossSpawned){
+      install.bossSpawned = true;
+      spawnBoss();
+    }
+    if (Math.random() < .55) spawnP(install.x + 50, GROUND() - 60, "spark", 1, { sp0:40, sp1:170, g:180 });
+    if (Math.random() < .25) AU.play("install");
+    if (install.progress >= 1){
+      install.progress = 1; install.done = true; install.temp = CONFIG.job.tempEnd;
+      spawnP(install.x + 50, GROUND() - 60, "cold", 40, { sp0:100, sp1:340, r:7 });
+      AU.play("win");
+      finish(true, "done");
+      return;
+    }
+  } else if (install.progress > 0 && !install.done){
+    install.progress = Math.max(0, install.progress - dt*0.10);
+  }
+  install.temp = lerp(CONFIG.job.tempStart, CONFIG.job.tempEnd, install.progress);
+
+  /* --- 围攻刷怪：冲刺阶段源源不断的压力 --- */
+  if (siegeOn && !install.done && state === "play"){
+    siegeT -= dt;
+    if (siegeT <= 0){
+      const S = CONFIG.siege;
+      const siegeAlive = enemies.filter(e => !e.dead && e.siege).length;
+      if (siegeAlive < S.maxAlive){
+        const side = Math.random() < .5 ? -1 : 1;
+        const sx = clamp(install.x + side * rnd(560, 760), 60, CONFIG.world.width - 60);
+        const types = ["blob","spitter","blob","flyer"];
+        const s = { t: types[(Math.random()*types.length)|0], x: sx };
+        if (s.t === "flyer") s.y = rnd(300, 380);
+        const e = makeEnemy(s);
+        e.siege = true; e.home = sx;
+        enemies.push(e);
+        spawnP(sx, s.y - 20, "ember", 10, { sp0:40, sp1:160, r:5 });
+      }
+      siegeT = CONFIG.siege.gap * rnd(.75, 1.3);
+    }
+  }
+
+  /* --- 路面交通：黄色面包车 / 黄色摩的迎面驶来，跳避否则被撞 --- */
+  trafficT -= dt;
+  if (trafficT <= 0 && state === "play"){
+    trafficT = rnd(CONFIG.traffic.minGap, CONFIG.traffic.maxGap);
+    const okada = Math.random() < .48;
+    const spd = rnd(CONFIG.traffic.speed[0], CONFIG.traffic.speed[1]);
+    traffic.push({
+      x: cam + V.W + 120, y: GROUND(), w: okada ? 66 : 158, h: okada ? 64 : 96,
+      vx: -spd, kind: okada ? "okada" : "van", t: 0, honked: false
+    });
+    AU.play("horn");
+  }
+  for (const car of traffic){
+    car.t += dt;
+    // 冰冻：氟利昂喷中可短暂冻住（减速），但不会毁坏
+    if (car.freeze > 0){
+      car.freeze -= dt;
+      car.x += car.vx*0.18*dt;
+      if (Math.random() < .2) spawnP(car.x + rnd(0,car.w), GROUND() - rnd(10,car.h), "ice", 1, { sp0:6, sp1:30, g:60, life:.4, r:2.2 });
+    } else {
+      car.x += car.vx*dt;
+    }
+    const cw = car.w, chh = car.h;
+    const roofY = car.y - chh;
+    const overlapX = player.x + player.w > car.x + 6 && player.x < car.x + cw - 6;
+    // 车顶搭乘：从上方落到车顶不扣血，但会被车带向左侧热浪锋面
+    if (overlapX && player.y + player.h <= roofY + 16 && player.vy >= 0 && !player.onGround){
+      player.y = roofY - player.h;
+      player.vy = 0; player.onGround = true; player.jet = false;
+      player.x += car.vx*dt*0.94;             // 被车载着走
+      player.squash = Math.max(player.squash, .1);
+      // 被带进热浪锋面才受伤（警示 + 持续灼烧）
+      if (player.x + player.w < heatFront + 120){
+        if (player.invuln <= 0){
+          hurtPlayer(1, player.x - 40);
+          player.invuln = Math.min(CONFIG.heat.burnInterval, 1.0);
+          toast("被车带进热浪！快跳车");
+          player.vx = 220; player.vy = -420; player.onGround = false;
+        }
+      } else if (Math.random() < .02){
+        toast("⚠ 车正把你带向热浪，快跳车！");
+      }
+    }
+    // 侧面/正面撞击（玩家站在地面、高度重叠车头）：扣血
+    else if (player.invuln <= 0 &&
+        player.x + player.w > car.x + cw*0.12 && player.x < car.x + cw*0.9 &&
+        player.y + player.h > roofY + 16){
+      hurtPlayer(1, car.x + cw);
+      kick(10);
+    }
+    if (Math.random() < .3) spawnP(car.x + car.w - 6, GROUND() - 4, "dust", 1, { sp0:20, sp1:80, g:-40, life:.5, r:5 });
+  }
+  traffic = traffic.filter(c => c.x > cam - 260);
+
+  /* --- 胜负 --- */
+  if (state === "play" && timer <= 0) finish(false, "heat");
+  if (state === "play" && player.hp <= 0) finish(false, "hp");
+
+  /* --- 地面窜火波推进 --- */
+  updateFireWaves(dt);
+
+  /* --- 电闪雷鸣（战斗中随热浪加密） --- */
+  updateLightning(dt);
+
+  /* --- 相机 --- */
+  camLook = lerp(camLook, (mouse.x - V.W/2)*0.10, 1 - Math.pow(.001, dt));
+  const target = clamp(player.x - V.W*0.36 + player.facing*30 + camLook, 0, W.width - V.W);
+  cam = lerp(cam, target, 1 - Math.pow(.0006, dt));
+  shake = Math.max(0, shake - dt*26);
+  flash = Math.max(0, flash - dt*3.2);
+  if (state === "win") clearFade = Math.min(1, clearFade + dt*0.9);
+  AU.setIntensity(clamp((1 - timer/CONFIG.heat.limit)*0.75 + (player.hp <= 2 ? .2 : 0), 0, 1));
+}
+
+function hurtPlayer(n, fromX){
+  if (window.GOD) return;   // ?god=1 调试无敌：验收围攻画面用
+  if (player.invuln > 0) return;
+  player.hp -= n;
+  player.invuln = CONFIG.player.invuln;
+  player.hurtT = .3;
+  player.vx = sign(player.x - fromX) * 260;
+  player.vy = -320;
+  bloodPuff(player.x + player.w/2, player.y + player.h*0.5, "heat", 12);
+  AU.play("hurt"); kick(8); flash = Math.max(flash, .3);
+  // 正在安装时被围攻打断：进度倒退，必须重新按住
+  if (state === "play" && install && !install.done && install.progress > .05){
+    install.progress = Math.max(0, install.progress - .22);
+    toast("工序被打断！重新按住 E 安装");
+  } else if (player.hp > 0) toast("受损！生命 " + player.hp + "/" + CONFIG.player.hp);
+}
+
+/* ---------- 12. 场景绘制 ---------- */
+function drawGround(){
+  const gy = GROUND(), g = ctx;
+  // 人行道
+  g.fillStyle = "#A78D70"; g.fillRect(0, gy, V.W, 56);
+  const off = -(cam % 72);
+  g.strokeStyle = "rgba(78,60,46,.26)"; g.lineWidth = 2;
+  for (let x = off; x < V.W + 80; x += 72){
+    g.beginPath(); g.moveTo(x, gy); g.lineTo(x - 12, gy + 56); g.stroke();
+  }
+  g.fillStyle = "rgba(255,238,205,.12)"; g.fillRect(0, gy, V.W, 4);
+  g.fillStyle = "rgba(50,38,28,.30)"; g.fillRect(0, gy + 52, V.W, 6);
+  // 路缘石
+  g.fillStyle = "#8C7558"; g.fillRect(0, gy + 58, V.W, 9);
+  g.fillStyle = "rgba(255,240,214,.22)"; g.fillRect(0, gy + 58, V.W, 2);
+  // 沥青路面
+  const rg = g.createLinearGradient(0, gy + 67, 0, V.H);
+  rg.addColorStop(0, "#3B424D"); rg.addColorStop(.55, "#2C333C"); rg.addColorStop(1, "#1D2229");
+  g.fillStyle = rg; g.fillRect(0, gy + 67, V.W, V.H - gy - 67);
+  // 车道虚线
+  g.fillStyle = "rgba(232,226,208,.42)";
+  const laneOff = -(cam % 148);
+  for (let x = laneOff; x < V.W + 100; x += 148){
+    g.fillRect(x, gy + 96, 74, 6);
+  }
+  // 裂缝 / 补丁
+  const R = seeded(97);
+  g.strokeStyle = "rgba(16,20,26,.55)"; g.lineWidth = 1.6;
+  for (let i=0;i<16;i++){
+    const bx = (R()*2600 - cam*0.9) % (V.W+200);
+    const px = bx < -100 ? bx + V.W + 200 : bx;
+    const py = gy + 78 + R()*40;
+    g.beginPath(); g.moveTo(px, py);
+    g.lineTo(px + 12 + R()*20, py + R()*8);
+    g.lineTo(px + 26 + R()*24, py - R()*6);
+    g.stroke();
+  }
+  g.fillStyle = "rgba(90,96,104,.16)";
+  for (let i=0;i<7;i++){
+    const px = ((i*420 + 130) - cam) % (V.W+400);
+    g.fillRect(px < -200 ? px + V.W + 400 : px, gy + 70 + (i%3)*18, 70 + (i%4)*40, 14);
+  }
+}
+
+function drawPlatforms(){
+  for (const pf of LEVEL.platforms){
+    const x = pf.x - cam;
+    if (x > V.W + 40 || x + pf.w < -40) continue;
+    const y = pf.y;
+    // 墙上的投影
+    ctx.fillStyle = "rgba(20,18,16,.22)";
+    ctx.fillRect(x + 6, y + 8, pf.w, 14);
+    if (pf.kind === "awning"){
+      // 金属支架
+      ctx.strokeStyle = "#5A5348"; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(x + 10, y + 2); ctx.lineTo(x + 10, y + 34); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + pf.w - 10, y + 2); ctx.lineTo(x + pf.w - 10, y + 34); ctx.stroke();
+      // 帆布条纹
+      const n = 10, sw = pf.w / n;
+      for (let i=0;i<n;i++){
+        ctx.fillStyle = i%2 ? "#A94733" : "#E6DAC0";
+        ctx.beginPath();
+        ctx.moveTo(x + i*sw, y);
+        ctx.lineTo(x + (i+1)*sw, y);
+        ctx.lineTo(x + (i+1)*sw, y + 13);
+        ctx.quadraticCurveTo(x + i*sw + sw*0.5, y + 24, x + i*sw, y + 13);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle = "rgba(255,255,255,.14)"; ctx.fillRect(x, y, pf.w, 3);
+      ctx.strokeStyle = "rgba(50,40,32,.5)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + pf.w, y); ctx.stroke();
+    } else if (pf.kind === "balcony"){
+      // 混凝土板
+      ctx.fillStyle = "#B8A488"; roundRect(x, y, pf.w, 18, 3); ctx.fill();
+      ctx.fillStyle = "#9A866C"; ctx.fillRect(x, y + 18, pf.w, 7);
+      ctx.fillStyle = "rgba(255,246,226,.35)"; ctx.fillRect(x, y, pf.w, 3);
+      // 栏杆
+      ctx.strokeStyle = "#4A5560"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x + 4, y - 30); ctx.lineTo(x + pf.w - 4, y - 30); ctx.stroke();
+      for (let bx = x + 10; bx < x + pf.w - 6; bx += 22){
+        ctx.beginPath(); ctx.moveTo(bx, y - 30); ctx.lineTo(bx, y); ctx.stroke();
+      }
+      // 晾衣 / 盆栽
+      ctx.fillStyle = "#7E5B3C";
+      ctx.fillRect(x + pf.w - 46, y - 16, 20, 16);
+      ctx.fillStyle = "#4E7A44";
+      ctx.beginPath(); ctx.arc(x + pf.w - 36, y - 22, 11, 0, TAU); ctx.fill();
+    } else if (pf.kind === "scaffold"){
+      // 脚手架钢管 + 木板
+      ctx.strokeStyle = "#7C7A72"; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(x + 12, y); ctx.lineTo(x + 12, y + 150); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + pf.w - 12, y); ctx.lineTo(x + pf.w - 12, y + 150); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + 12, y + 60); ctx.lineTo(x + pf.w - 12, y + 138); ctx.stroke();
+      ctx.fillStyle = "#8A6B45"; ctx.fillRect(x, y, pf.w, 14);
+      ctx.strokeStyle = "rgba(50,36,22,.7)"; ctx.lineWidth = 2;
+      for (let bx = x + 30; bx < x + pf.w; bx += 46){
+        ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(bx, y + 14); ctx.stroke();
+      }
+      // 警示条
+      ctx.fillStyle = "#E0B23C";
+      ctx.fillRect(x, y + 14, pf.w, 5);
+      ctx.fillStyle = "#23282E";
+      for (let bx = x; bx < x + pf.w; bx += 18) ctx.fillRect(bx, y + 14, 9, 5);
+    } else {
+      // 屋顶女儿墙
+      ctx.fillStyle = "#AD9A80"; ctx.fillRect(x, y - 26, pf.w, 26);
+      ctx.fillStyle = "#C7B69A"; ctx.fillRect(x, y - 26, pf.w, 5);
+      ctx.fillStyle = "rgba(30,26,22,.35)"; ctx.fillRect(x, y - 3, pf.w, 3);
+    }
+    // 落脚提示：顶端一条很淡的品牌蓝，让玩家一眼看出能站
+    ctx.fillStyle = "rgba(130,210,232,.55)";
+    ctx.fillRect(x + 2, y - 2, pf.w - 4, 2);
+  }
+}
+
+/* ---- 车辆障碍（损毁 / 堵车） ---- */
+function vehShadow(x, y, w){
+  ctx.fillStyle = "rgba(12,14,18,.34)";
+  ctx.beginPath(); ctx.ellipse(x + w/2, y + 6, w*0.52, 12, 0, 0, TAU); ctx.fill();
+}
+function wheels(x, y, r, spin){
+  for (const cx of [x, x + 0]){
+    void cx;
+  }
+  ctx.save();
+  ctx.fillStyle = "#16181B";
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  ctx.fillStyle = "#2C3036";
+  ctx.beginPath(); ctx.arc(x, y, r*0.52, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "#0B0C0E"; ctx.lineWidth = 2;
+  for (let i=0;i<4;i++){
+    const a = (spin||0) + i*Math.PI/2;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a)*r*0.46, y + Math.sin(a)*r*0.46); ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawVehicle(v){
+  if (v.dead) return;   // 已被焊枪烧穿的车不再绘制
+  const x = v.x - cam, y = v.y, w = v.w, h = v.h;
+  if (x > V.W + 60 || x + w < -60) return;
+  const t = elapsed;
+  vehShadow(x, y, w);
+  ctx.save();
+
+  if (v.kind === "danfo"){
+    // 拉各斯黄色小巴：亮黄车身 + 黑色横条
+    const body = ctx.createLinearGradient(x, y, x, y + h);
+    body.addColorStop(0, "#F2C634"); body.addColorStop(.45, "#E3AE24"); body.addColorStop(1, "#BE8A16");
+    ctx.fillStyle = body;
+    roundRect(x, y, w, h, 14); ctx.fill();
+    ctx.strokeStyle = "#3A2C10"; ctx.lineWidth = 2.5; ctx.stroke();
+    // 黑色腰线
+    ctx.fillStyle = "#1A1A1A";
+    ctx.fillRect(x + 6, y + h*0.36, w - 12, h*0.19);
+    // 车窗
+    const winY = y + 14, winH = h*0.30;
+    for (let i=0;i<4;i++){
+      const wx = x + 20 + i*(w-44)/4, ww = (w-64)/4;
+      const wg = ctx.createLinearGradient(wx, winY, wx, winY+winH);
+      wg.addColorStop(0, "#9FC7D8"); wg.addColorStop(.55, "#4C7C93"); wg.addColorStop(1, "#2B4A5C");
+      ctx.fillStyle = wg; roundRect(wx, winY, ww, winH, 3); ctx.fill();
+      ctx.strokeStyle = "rgba(20,20,20,.55)"; ctx.lineWidth = 1.6; ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.22)";
+      ctx.beginPath(); ctx.moveTo(wx+3, winY+winH); ctx.lineTo(wx+ww*0.5, winY); ctx.lineTo(wx+ww*0.7, winY); ctx.lineTo(wx+ww*0.2, winY+winH); ctx.fill();
+    }
+    // 车门缝 / 把手
+    ctx.strokeStyle = "rgba(60,44,10,.55)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x + w*0.62, y + 8); ctx.lineTo(x + w*0.62, y + h - 12); ctx.stroke();
+    ctx.fillStyle = "#4A3A12"; ctx.fillRect(x + w*0.48, y + h*0.62, 14, 4);
+    // 前脸（右侧为车头）
+    ctx.fillStyle = "#D9D2C2"; ctx.fillRect(x + w - 16, y + h*0.42, 14, 10);
+    ctx.fillStyle = "#FFF3C9"; ctx.beginPath(); ctx.arc(x + w - 10, y + h*0.46, 6, 0, TAU); ctx.fill();
+    ctx.fillStyle = "#7B1E1E"; ctx.fillRect(x + 6, y + h*0.62, 8, 12);
+    // 保险杠
+    ctx.fillStyle = "#B9B2A4"; ctx.fillRect(x + w - 8, y + h - 26, 10, 18);
+    // 车顶行李架
+    ctx.strokeStyle = "#5A4B22"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x + 14, y - 6); ctx.lineTo(x + w - 26, y - 6); ctx.stroke();
+    // 锈斑 / 损坏
+    ctx.fillStyle = "rgba(96,54,26,.34)";
+    ctx.beginPath(); ctx.ellipse(x + 40, y + h - 20, 20, 8, .3, 0, TAU); ctx.fill();
+    ctx.fillStyle = "rgba(30,26,20,.25)";
+    ctx.beginPath(); ctx.ellipse(x + w*0.34, y + h*0.55, 26, 7, -.1, 0, TAU); ctx.fill();
+    // 车轮
+    wheels(x + 46, y + h - 6, 21, 0);
+    wheels(x + w - 56, y + h - 6, 21, 0);
+  }
+  else if (v.kind === "sedan"){
+    const body = ctx.createLinearGradient(x, y, x, y + h);
+    body.addColorStop(0, "#C6D0D6"); body.addColorStop(1, "#7C8A94");
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(x + 4, y + h - 18);
+    ctx.lineTo(x + 10, y + h*0.42);
+    ctx.quadraticCurveTo(x + w*0.3, y + h*0.16, x + w*0.55, y + h*0.14);
+    ctx.quadraticCurveTo(x + w*0.8, y + h*0.18, x + w - 8, y + h*0.45);
+    ctx.lineTo(x + w - 4, y + h - 18);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#3E4A52"; ctx.lineWidth = 2; ctx.stroke();
+    // 车窗
+    ctx.fillStyle = "#2E4A5A";
+    ctx.beginPath();
+    ctx.moveTo(x + 22, y + h*0.44); ctx.lineTo(x + 30, y + h*0.24);
+    ctx.lineTo(x + w*0.48, y + h*0.22); ctx.lineTo(x + w*0.48, y + h*0.44); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x + w*0.54, y + h*0.44); ctx.lineTo(x + w*0.54, y + h*0.22);
+    ctx.lineTo(x + w - 30, y + h*0.28); ctx.lineTo(x + w - 22, y + h*0.44); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.22)";
+    ctx.beginPath(); ctx.moveTo(x+34,y+h*0.42); ctx.lineTo(x+44,y+h*0.26); ctx.lineTo(x+58,y+h*0.26); ctx.lineTo(x+48,y+h*0.42); ctx.fill();
+    // 灯 / 轮
+    ctx.fillStyle = "#F6E7B0"; ctx.fillRect(x + w - 14, y + h*0.52, 8, 7);
+    ctx.fillStyle = "#8E2A22"; ctx.fillRect(x + 4, y + h*0.52, 7, 7);
+    wheels(x + 42, y + h - 4, 17, 0);
+    wheels(x + w - 44, y + h - 4, 17, 0);
+  }
+  else if (v.kind === "wreck"){
+    // 侧翻 / 撞毁的轿车
+    ctx.save();
+    ctx.translate(x + w/2, y + h/2);
+    ctx.rotate(-0.16);
+    ctx.translate(-w/2, -h/2);
+    ctx.fillStyle = "#8C3A2E";
+    roundRect(0, 6, w, h - 14, 10); ctx.fill();
+    ctx.strokeStyle = "#43201A"; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = "#2A2A2A";
+    ctx.fillRect(10, h*0.42, w - 20, h*0.22);
+    // 破碎车窗
+    ctx.fillStyle = "#4C6A78";
+    ctx.beginPath();
+    ctx.moveTo(26, 20); ctx.lineTo(w*0.44, 12); ctx.lineTo(w*0.5, h*0.5); ctx.lineTo(22, h*0.52);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(230,245,255,.65)"; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(30, 22); ctx.lineTo(w*0.36, h*0.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w*0.3, 16); ctx.lineTo(w*0.34, h*0.48); ctx.stroke();
+    // 凹陷
+    ctx.fillStyle = "rgba(30,16,12,.4)";
+    ctx.beginPath(); ctx.ellipse(w*0.66, h*0.62, 26, 11, .2, 0, TAU); ctx.fill();
+    // 掉落的轮子
+    ctx.fillStyle = "#17191C";
+    ctx.beginPath(); ctx.arc(w*0.78, h - 2, 15, 0, TAU); ctx.fill();
+    ctx.restore();
+    // 烟
+    for (let i=0;i<3;i++){
+      const a = .10 - i*.02;
+      ctx.fillStyle = "rgba(60,54,50," + a.toFixed(3) + ")";
+      ctx.beginPath();
+      ctx.ellipse(x + w*0.5 + Math.sin(t*1.2 + i)*14, y - 10 - i*22 - (t*14 % 20), 24 + i*8, 16 + i*6, 0, 0, TAU);
+      ctx.fill();
+    }
+  }
+  else if (v.kind === "keke"){
+    // KEKE 三轮：黄绿车身 + 布篷
+    const body = ctx.createLinearGradient(x, y, x, y + h);
+    body.addColorStop(0, "#D9C23A"); body.addColorStop(1, "#9E8A1C");
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(x + 6, y + h - 16);
+    ctx.lineTo(x + 6, y + 26);
+    ctx.quadraticCurveTo(x + w*0.5, y - 10, x + w - 8, y + 24);
+    ctx.lineTo(x + w - 6, y + h - 16);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#3F3410"; ctx.lineWidth = 2.4; ctx.stroke();
+    // 篷布
+    ctx.fillStyle = "#2F4A3A";
+    ctx.beginPath();
+    ctx.moveTo(x + 12, y + 26);
+    ctx.quadraticCurveTo(x + w*0.5, y - 4, x + w - 14, y + 26);
+    ctx.lineTo(x + w - 14, y + 40);
+    ctx.lineTo(x + 12, y + 40);
+    ctx.closePath(); ctx.fill();
+    // 侧窗
+    ctx.fillStyle = "#7FA3B2"; roundRect(x + 24, y + 42, w*0.34, 22, 4); ctx.fill();
+    ctx.fillStyle = "#5C7C8A"; roundRect(x + w*0.44, y + 42, w*0.3, 22, 4); ctx.fill();
+    // 轮
+    wheels(x + 30, y + h - 6, 15, 0);
+    wheels(x + w - 30, y + h - 6, 15, 0);
+    ctx.fillStyle = "#C9C2B0"; ctx.fillRect(x + w - 18, y + h*0.5, 12, 8);
+  }
+  else if (v.kind === "truck"){
+    // 货车：集装箱 + 车头（堵在路上的车流）
+    const cont = ctx.createLinearGradient(x, y, x, y + h);
+    cont.addColorStop(0, "#5E7385"); cont.addColorStop(1, "#3C4C5A");
+    ctx.fillStyle = cont;
+    roundRect(x, y, w*0.74, h, 4); ctx.fill();
+    ctx.strokeStyle = "#26323C"; ctx.lineWidth = 2.5; ctx.stroke();
+    // 波纹
+    ctx.strokeStyle = "rgba(18,26,32,.35)"; ctx.lineWidth = 2;
+    for (let bx = x + 12; bx < x + w*0.7; bx += 16){
+      ctx.beginPath(); ctx.moveTo(bx, y + 6); ctx.lineTo(bx, y + h - 8); ctx.stroke();
+    }
+    // 锈与凹陷
+    ctx.fillStyle = "rgba(120,62,30,.28)";
+    ctx.beginPath(); ctx.ellipse(x + 40, y + h - 14, 26, 10, .2, 0, TAU); ctx.fill();
+    // 车头
+    const cab = ctx.createLinearGradient(x + w*0.74, y, x + w*0.74, y + h);
+    cab.addColorStop(0, "#C9D2D6"); cab.addColorStop(1, "#8A959B");
+    ctx.fillStyle = cab;
+    roundRect(x + w*0.74, y + 16, w*0.26, h - 16, 6); ctx.fill();
+    ctx.strokeStyle = "#3A444A"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "#3C5C6E"; roundRect(x + w*0.78, y + 26, w*0.16, 30, 3); ctx.fill();
+    ctx.fillStyle = "#F4E3AC"; ctx.fillRect(x + w - 12, y + h*0.52, 8, 9);
+    wheels(x + 52, y + h - 4, 22, 0);
+    wheels(x + w*0.62, y + h - 4, 22, 0);
+    wheels(x + w - 40, y + h - 4, 20, 0);
+  }
+  // ---- 统一细节层：金属弹头式高光 / 底部阴影 / 锈斑 / 烧灼进度 ----
+  vehPass(v, x, y, w, h, t);
+  ctx.restore();
+}
+
+/* 车辆共用细节层：让每台车都有厚涂质感与可读的烧毁反馈 */
+function vehPass(v, x, y, w, h, t){
+  // 顶部 rim light（预渲染 3D 转 2D 的金属亮边）
+  const gl = ctx.createLinearGradient(0, y, 0, y + h*0.5);
+  gl.addColorStop(0, "rgba(255,244,214,.30)");
+  gl.addColorStop(1, "rgba(255,244,214,0)");
+  ctx.fillStyle = gl; ctx.fillRect(x + 3, y + 2, w - 6, h*0.46);
+  // 底部压暗（体积感）
+  ctx.fillStyle = "rgba(24,16,10,.26)";
+  ctx.fillRect(x + 4, y + h*0.74, w - 8, h*0.22);
+  // 锈斑（按车固定种子，帧间不闪烁）
+  const rr = seeded((v.x * 13) | 0);
+  for (let i = 0; i < 8; i++){
+    const rx = x + 10 + rr()*(w - 20), ry2 = y + h*(0.42 + rr()*0.52);
+    const rs = 2.5 + rr()*6.5;
+    ctx.fillStyle = "rgba(112,58,24," + (0.16 + rr()*0.22).toFixed(2) + ")";
+    ctx.beginPath(); ctx.ellipse(rx, ry2, rs, rs*0.55, rr()*3, 0, TAU); ctx.fill();
+  }
+  // 烧灼：越烧越黑 + 火舌 + 顶部烧毁进度条（一眼可读）
+  if (v.burn > 0){
+    const need = Math.max(1.6, v.w*v.h/2600);
+    const k = clamp(v.burn/need, 0, 1);
+    ctx.fillStyle = "rgba(26,16,10," + (0.14 + k*0.5).toFixed(2) + ")";
+    ctx.fillRect(x + 6, y + 4, w - 12, h - 8);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const flames = 4 + Math.round(k*5);
+    for (let i = 0; i < flames; i++){
+      const fx = x + 12 + ((i*61 + 13) % Math.max(1, w - 24));
+      const fh = (16 + k*26) * (0.6 + 0.4*Math.sin(t*9 + i));
+      const fg = ctx.createLinearGradient(0, y + 6, 0, y + 6 - fh);
+      fg.addColorStop(0, "rgba(255,150,50,.7)");
+      fg.addColorStop(1, "rgba(255,60,20,0)");
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.moveTo(fx - 5, y + 6); ctx.quadraticCurveTo(fx, y + 6 - fh, fx + 5, y + 6); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    // 进度条：焊枪烧毁还需多久
+    const bw = Math.min(64, w*0.4);
+    ctx.fillStyle = "rgba(10,14,20,.72)"; roundRect(x + w/2 - bw/2, y - 22, bw, 7, 3); ctx.fill();
+    const bg2 = ctx.createLinearGradient(x + w/2 - bw/2, 0, x + w/2 + bw/2, 0);
+    bg2.addColorStop(0, "#E98C4A"); bg2.addColorStop(1, "#E9503C");
+    ctx.fillStyle = bg2; roundRect(x + w/2 - bw/2 + 1, y - 21, Math.max(2, (bw-2)*k), 5, 2); ctx.fill();
+    ctx.fillStyle = "#FFE9C4"; ctx.font = "800 9px system-ui"; ctx.textAlign = "center";
+    ctx.fillText("烧毁中", x + w/2, y - 27);
+  }
+  // 钻枪毁伤闪烁：受击瞬间白色高光扫过车体
+  if (v.dmgFlash > 0){
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = "rgba(255,255,255," + (v.dmgFlash*2.4).toFixed(2) + ")";
+    ctx.fillRect(x + 4, y + 2, w - 8, h - 6);
+    ctx.restore();
+    v.dmgFlash = Math.max(0, v.dmgFlash - 1/60);
+  }
+}
+
+/* ---- 路面交通：迎面驶来的黄色面包车 / 黄色摩的（撞上扣血，需跳避） ---- */
+function drawTraffic(){
+  for (const car of traffic){
+    const x = car.x - cam, y = car.y, w = car.w, h = car.h;
+    if (x > V.W + 80 || x + w < -80) continue;
+    const t = car.t;
+    // 速度线
+    ctx.save();
+    ctx.globalAlpha = .30;
+    ctx.strokeStyle = "#FFE9A8"; ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++){
+      const ly = y - h*0.35 - i*12;
+      ctx.beginPath(); ctx.moveTo(x + w + 6, ly); ctx.lineTo(x + w + 30 + i*12, ly); ctx.stroke();
+    }
+    ctx.restore();
+    vehShadow(x, y, w);
+    const spin = t * 14;
+    if (car.kind === "van"){
+      const body = ctx.createLinearGradient(x, y - h, x, y);
+      body.addColorStop(0, "#F6D24A"); body.addColorStop(.5, "#E3AE24"); body.addColorStop(1, "#B9861A");
+      ctx.fillStyle = body;
+      roundRect(x, y - h, w, h - 10, 10); ctx.fill();
+      ctx.strokeStyle = "#3A2C10"; ctx.lineWidth = 2.2; ctx.stroke();
+      ctx.fillStyle = "#1A1A1A"; ctx.fillRect(x + 6, y - h*0.62, w - 12, h*0.16);
+      ctx.fillStyle = "#9FC7D8"; roundRect(x + 5, y - h + 7, w*0.28, h*0.34, 4); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.fillRect(x + 7, y - h + 9, w*0.1, h*0.14);
+      // 车头灯朝左 + 光锥（预警：它正对着你开过来）
+      ctx.fillStyle = "#FFF3C9"; ctx.beginPath(); ctx.arc(x + 6, y - h*0.42, 6, 0, TAU); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      const lb = ctx.createLinearGradient(x - 96, 0, x, 0);
+      lb.addColorStop(0, "rgba(255,240,190,0)"); lb.addColorStop(1, "rgba(255,240,190,.28)");
+      ctx.fillStyle = lb;
+      ctx.beginPath(); ctx.moveTo(x, y - h*0.42 - 12); ctx.lineTo(x - 96, y - h*0.28); ctx.lineTo(x - 96, y - h*0.62); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      wheels(x + w*0.26, y - 8, 16, spin);
+      wheels(x + w*0.78, y - 8, 16, spin);
+    } else {
+      // 黄色 okada 摩的 + 头盔骑手
+      const body = ctx.createLinearGradient(x, y - h, x, y);
+      body.addColorStop(0, "#F2C93C"); body.addColorStop(1, "#B98A18");
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.moveTo(x + 8, y - 14);
+      ctx.quadraticCurveTo(x + 6, y - h*0.62, x + w*0.42, y - h*0.78);
+      ctx.quadraticCurveTo(x + w*0.6, y - h*0.7, x + w - 10, y - h*0.34);
+      ctx.quadraticCurveTo(x + w - 6, y - 12, x + w*0.5, y - 10);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "#3A2C10"; ctx.lineWidth = 2; ctx.stroke();
+      // 座椅
+      ctx.fillStyle = "#2A2A2A"; roundRect(x + w*0.42, y - h*0.62, w*0.3, 12, 3); ctx.fill();
+      // 骑手（深棕肤色 + 头盔 + 抓把手的手臂）
+      ctx.fillStyle = "#5B3A22";
+      ctx.beginPath(); ctx.arc(x + w*0.46, y - h*0.86, 8.5, 0, TAU); ctx.fill();
+      ctx.strokeStyle = "#3A2318"; ctx.lineWidth = 4; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(x + w*0.46, y - h*0.76); ctx.lineTo(x + w*0.5, y - h*0.5); ctx.stroke();
+      const helmet = ctx.createLinearGradient(x + w*0.38, y - h, x + w*0.54, y - h*0.8);
+      helmet.addColorStop(0, "#E8E4D8"); helmet.addColorStop(1, "#9B968A");
+      ctx.fillStyle = helmet;
+      ctx.beginPath(); ctx.arc(x + w*0.46, y - h*0.9, 9, Math.PI, TAU); ctx.fill();
+      ctx.fillStyle = "#D9D2C2"; ctx.fillRect(x + w*0.46 - 9, y - h*0.92, 18, 4);
+      ctx.strokeStyle = "#6E4326"; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(x + w*0.5, y - h*0.62); ctx.lineTo(x + w*0.16, y - h*0.52); ctx.stroke();
+      // 前灯
+      ctx.fillStyle = "#FFF3C9"; ctx.beginPath(); ctx.arc(x + 10, y - h*0.4, 4.5, 0, TAU); ctx.fill();
+      wheels(x + w*0.16, y - 8, 11, spin);
+      wheels(x + w*0.82, y - 8, 11, spin);
+    }
+    // 冻结涂装：冰蓝罩层 + 霜花（氟利昂短冻，不毁坏）
+    if (car.freeze > 0){
+      ctx.save();
+      ctx.globalAlpha = clamp(car.freeze/1.4, 0, 1)*0.75;
+      ctx.fillStyle = "rgba(163,226,235,.5)";
+      roundRect(x, y - h, w, h - 10, 8); ctx.fill();
+      ctx.globalAlpha = clamp(car.freeze/1.4, 0, 1);
+      ctx.strokeStyle = "rgba(235,252,255,.9)"; ctx.lineWidth = 2;
+      roundRect(x, y - h, w, h - 10, 8); ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+/* ---- 安装点（室外机 + 官方贴纸） ---- */
+function drawInstall(){
+  const x = install.x - cam, gy = GROUND();
+  if (x < -200 || x > V.W + 200) return;
+  const y = gy - 118;
+  // 墙面支架
+  ctx.strokeStyle = "#6B6154"; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(x + 4, gy); ctx.lineTo(x + 4, y + 30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + 100, gy); ctx.lineTo(x + 100, y + 30); ctx.stroke();
+  // 室外机
+  const g = ctx.createLinearGradient(x, y, x, y + 118);
+  g.addColorStop(0, "#F7F4EA"); g.addColorStop(1, "#D6D2C4");
+  ctx.fillStyle = g; roundRect(x, y, 104, 118, 8); ctx.fill();
+  ctx.strokeStyle = C.navy; ctx.lineWidth = 3; ctx.stroke();
+  // 散热格栅
+  ctx.strokeStyle = "rgba(60,80,96,.5)"; ctx.lineWidth = 2;
+  for (let i=0;i<9;i++){
+    ctx.beginPath(); ctx.moveTo(x + 10, y + 46 + i*7); ctx.lineTo(x + 94, y + 46 + i*7); ctx.stroke();
+  }
+  // 风扇
+  ctx.fillStyle = "#E3EBEE"; ctx.beginPath(); ctx.arc(x + 52, y + 26, 26, 0, TAU); ctx.fill();
+  ctx.strokeStyle = C.navy; ctx.lineWidth = 2; ctx.stroke();
+  for (let i=0;i<4;i++){
+    ctx.save(); ctx.translate(x + 52, y + 26);
+    ctx.rotate(i*Math.PI/2 + (install.done ? elapsed*7 : install.spin*0.2));
+    ctx.fillStyle = "#B7C6CE"; roundRect(-3, -22, 6, 20, 3); ctx.fill();
+    ctx.restore();
+  }
+  // 官方视觉锤 + 字标贴纸（不重绘品牌图形）
+  if (IMG.logo.ok){
+    const ar = IMG.logo.naturalWidth / IMG.logo.naturalHeight;
+    const tw = 84, th = tw/ar;
+    ctx.save();
+    try { ctx.filter = "brightness(.92)"; } catch(e){}
+    ctx.drawImage(IMG.logo, x + 10, y + 88, tw, th);
+    ctx.restore();
+  }
+  // 进度环
+  const cx = x + 52, cy = y - 34;
+  if (!install.done){
+    ctx.strokeStyle = "rgba(255,255,255,.30)"; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(cx, cy, 20, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = C.brand; ctx.lineWidth = 7; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(cx, cy, 20, -Math.PI/2, -Math.PI/2 + TAU*install.progress); ctx.stroke();
+    const near = Math.abs((player.x + player.w/2) - (install.x + 50)) < CONFIG.job.reach;
+    ctx.fillStyle = near ? C.brand : "rgba(255,255,255,.8)";
+    ctx.font = "800 15px system-ui,'Microsoft YaHei',sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(near ? "按住 E 安装" : "安装点", cx, cy - 34);
+  } else {
+    ctx.fillStyle = C.brand; ctx.font = "800 18px system-ui,'Microsoft YaHei',sans-serif";
+    ctx.textAlign = "center"; ctx.fillText("24℃ 完工", cx, cy - 20);
+  }
+}
+
+/* ---- 岩浆喷口 ---- */
+function drawVents(){
+  for (const v of ventHazards){
+    const x = v.x - cam, gy = GROUND();
+    if (x < -120 || x > V.W + 120) continue;
+    const cyc = v.t % 3.6;
+    const charging = cyc > 2.2 && cyc < 3.5;
+    const warn = cyc > 1.6 && cyc <= 2.2;
+    // 地面裂缝
+    ctx.strokeStyle = charging ? "#FF8A3D" : "#4A2A20";
+    ctx.lineWidth = charging ? 5 : 3;
+    ctx.beginPath();
+    ctx.moveTo(x - 30, gy + 2);
+    ctx.lineTo(x - 12, gy - 4);
+    ctx.lineTo(x + 4, gy + 3);
+    ctx.lineTo(x + 22, gy - 3);
+    ctx.lineTo(x + 34, gy + 2);
+    ctx.stroke();
+    // 熔岩底光
+    const gl = ctx.createRadialGradient(x, gy, 2, x, gy, 60);
+    gl.addColorStop(0, "rgba(255,120,40," + (charging ? .55 : warn ? .35 : .18) + ")");
+    gl.addColorStop(1, "rgba(226,60,18,0)");
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, gy, 60, 0, TAU); ctx.fill();
+
+    if (charging){
+      const h = 170 * Math.min(1, (cyc - 2.2)/0.25);
+      // 主火柱：底宽上收，边缘波动，避免看起来像一只瓶子
+      const col = ctx.createLinearGradient(x, gy, x, gy - h);
+      col.addColorStop(0, "rgba(255,246,200,.96)");
+      col.addColorStop(.35, "rgba(255,150,50,.90)");
+      col.addColorStop(.72, "rgba(238,86,26,.55)");
+      col.addColorStop(1, "rgba(226,50,16,.02)");
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.moveTo(x - 52, gy);
+      for (let i=0;i<=10;i++){
+        const t = i/10, yy = gy - h*t;
+        const ww = 52*Math.pow(1 - t*0.9, .7) + Math.sin(elapsed*15 + i*1.3)*8;
+        ctx.lineTo(x - ww, yy);
+      }
+      for (let i=10;i>=0;i--){
+        const t = i/10, yy = gy - h*t;
+        const ww = 52*Math.pow(1 - t*0.9, .7) + Math.sin(elapsed*15 + i*1.3 + 2)*8;
+        ctx.lineTo(x + ww, yy);
+      }
+      ctx.closePath(); ctx.fill();
+      // 内焰舌
+      ctx.fillStyle = "rgba(255,238,180,.55)";
+      for (let k=-1;k<=1;k++){
+        const tx = x + k*17, tw = 9 + Math.sin(elapsed*11 + k)*3;
+        ctx.beginPath();
+        ctx.moveTo(tx - tw, gy);
+        ctx.quadraticCurveTo(tx - tw*0.4, gy - h*0.55, tx + Math.sin(elapsed*9+k)*6, gy - h*0.78);
+        ctx.quadraticCurveTo(tx + tw*0.4, gy - h*0.5, tx + tw, gy);
+        ctx.closePath(); ctx.fill();
+      }
+      // 底部炽白熔池
+      ctx.fillStyle = "rgba(255,252,230,.75)";
+      ctx.beginPath(); ctx.ellipse(x, gy + 1, 34, 8, 0, 0, TAU); ctx.fill();
+    }
+    if (warn){
+      ctx.strokeStyle = "rgba(255,180,80," + (0.4 + 0.4*Math.sin(elapsed*20)) + ")";
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, gy - 6, 22 + Math.sin(elapsed*10)*5, 0, TAU); ctx.stroke();
+    }
+  }
+}
+
+/* ---- 怪物 ---- */
+function drawEnemies(){
+  for (const e of enemies){
+    const x = e.x - cam, y = e.y;
+    if (x < -120 || x > V.W + 120) continue;
+    const alpha = e.dead ? 1 - e.deadT/1.2 : 1;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    // 投影（飞行怪的影子投到地面）
+    ctx.fillStyle = "rgba(10,12,16," + (e.type === "flyer" ? ".16" : ".28") + ")";
+    const sy = e.type === "flyer" ? GROUND() : e.y;
+    ctx.beginPath(); ctx.ellipse(x, sy, e.w*0.46, 8, 0, 0, TAU); ctx.fill();
+    if (e.type === "boss") drawBoss(e, x, y);
+    else if (e.type === "bug") drawBug(e, x, y);
+    else if (e.type === "blob") drawBlob(e, x, y);
+    else if (e.type === "spitter") drawSpitter(e, x, y);
+    else if (e.type === "spreader") drawSpreader(e, x, y);
+    else if (e.type === "flyer") drawFlyer(e, x, y);
+    // 冻结提示（精灵已由 hue-rotate 滤镜整体染成冷色，这里只补冰晶标签）
+    if (e.frozen > 0 && !e.dead){
+      ctx.fillStyle = "#EAF9FD"; ctx.font = "800 10px Arial"; ctx.textAlign = "center";
+      ctx.fillText("❄ FREEZE", x, y - e.h*1.1 - 10);
+      if (Math.random() < .3) spawnP(x + rnd(-e.w/2, e.w/2), y - e.h*rnd(.3,.9), "ice", 1, { sp0:6, sp1:26, g:60, life:.5, r:2.4 });
+    }
+    // 血量（BOSS 用顶部专属血条，不再画迷你条）
+    if (!e.dead && !e.boss && e.hp < e.maxHp){
+      const bw = e.w*0.8, bx = x - bw/2, by = y - e.h - 18;
+      ctx.fillStyle = "rgba(10,14,20,.6)"; ctx.fillRect(bx, by, bw, 5);
+      ctx.fillStyle = e.frozen > 0 ? C.brand : "#E9553C";
+      ctx.fillRect(bx, by, bw * clamp(e.hp/e.maxHp,0,1), 5);
+    }
+    ctx.restore();
+  }
+}
+
+/* ---- 怪物绘制：立体恐怖向精灵（FIRMAN_mon_1..4），叠加受击白闪 / 冻结冷色 / 充能透光 / 移动动作 ---- */
+function drawMonSprite(e, x, y, img, scale, charge, glowCol, anim){
+  if (!img || !img.ok){
+    // 兜底：熔岩圆团（资源未就绪时也不空场）
+    ctx.save();
+    const g = ctx.createRadialGradient(x, y - e.h*0.5, 4, x, y - e.h*0.5, e.w*0.6);
+    g.addColorStop(0, "#FFA24E"); g.addColorStop(1, "#8E2E18");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(x, y - e.h*0.5, e.w*0.5, e.h*0.5, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+    return;
+  }
+  const dh = e.h * scale;
+  const dw = dh * img.naturalWidth / img.naturalHeight;
+  ctx.save();
+  ctx.translate(x, y);
+  // ---- 移动动作（程序化）：贴图不再是"平移的画" ----
+  if (anim){
+    if (anim.airborne){                    // 跳跃/俯冲：沿速度方向拉伸
+      ctx.rotate(clamp((anim.vx||0)*0.00035, -.28, .28));
+      ctx.scale(0.90, 1.16);
+    } else if (anim.walk){                 // 行走：摇摆 + 呼吸压缩
+      const ph = anim.phase || 0;
+      const amp = anim.amp || 1;
+      ctx.rotate(Math.sin(ph)*0.10*amp);
+      ctx.translate(0, -Math.abs(Math.sin(ph))*4*amp);
+      ctx.scale(1 - Math.sin(ph*2)*0.055*amp, 1 + Math.sin(ph*2)*0.055*amp);
+    } else if (anim.fly){                  // 飞行：振翅 + 俯仰
+      const ph = anim.phase || 0;
+      ctx.scale(1 + Math.sin(ph)*0.06, 1 - Math.sin(ph)*0.12);
+      ctx.rotate(clamp((anim.vy||0)*0.0004, -.5, .5));
+    } else if (anim.breath){               // 驻地怪：呼吸 + 朝向玩家的前倾
+      const ph = anim.phase || 0;
+      const rec = anim.recoil || 0;
+      ctx.translate(0, Math.sin(ph)*2);
+      ctx.scale(1 + rec*0.06, 1 - Math.sin(ph)*0.03 - rec*0.10);
+      ctx.rotate(clamp((anim.lean||0)*0.08, -.12, .12) + rec*0.10);
+    }
+  }
+  if (e.dead){
+    const k = clamp(e.deadT/1.2, 0, 1);
+    ctx.translate(0, k*30);
+    ctx.rotate(-0.55*k);
+    ctx.globalAlpha *= (1 - k);
+  }
+  if (charge > .05){
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const cg = ctx.createRadialGradient(0, -dh*0.5, 2, 0, -dh*0.5, dw);
+    cg.addColorStop(0, glowCol + (0.38*charge).toFixed(2) + ")");
+    cg.addColorStop(1, glowCol + "0)");
+    ctx.fillStyle = cg;
+    ctx.beginPath(); ctx.ellipse(0, -dh*0.45, dw*0.85, dh*0.6, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  let f = null;
+  if (e.hitFlash > 0) f = "brightness(2.4)";
+  else if (e.frozen > 0) f = "saturate(.35) brightness(1.35) hue-rotate(160deg)";
+  if (f){ try { ctx.filter = f; } catch(err){} }
+  ctx.drawImage(img, -dw/2, -dh, dw, dh);
+  try { ctx.filter = "none"; } catch(err){ }
+  if (e.hitFlash > 0){
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = "rgba(255,255,255," + (e.hitFlash*2).toFixed(2) + ")";
+    ctx.beginPath(); ctx.ellipse(0, -dh*0.5, dw*0.5, dh*0.55, 0, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+/* ---- BOSS 热浪巨兽：按阶段切换四张姿态图 + 蓄力透光 + 行走摆动 ---- */
+function drawBoss(e, x, y){
+  let img = IMG.boss[0], charge = 0, glow = "rgba(255,150,60,";
+  let anim = null;
+  if (e.phase === "tele_scatter"){ img = IMG.boss[1]; charge = clamp(1 - e.phaseT/.8, 0, 1); }
+  else if (e.phase === "tele_ground"){ img = IMG.boss[2]; charge = clamp(1 - e.phaseT/.8, 0, 1); glow = "rgba(255,90,30,"; }
+  else if (e.phase === "tele_summon"){ img = IMG.boss[3]; charge = clamp(1 - e.phaseT/.8, 0, 1); glow = "rgba(255,200,80,"; }
+  else if (e.phase === "walk") anim = { walk: true, phase: e.anim*2.6, amp: .8 };
+  else anim = { breath: true, phase: e.t*1.4, lean: sign(player.x - e.x)*0.6, recoil: 0 };
+  // 体型放大：BOSS 比普通怪高一大截
+  const scale = 1.02;
+  drawMonSprite(e, x, y, img, scale, charge, glow, anim);
+  // 登场/蓄力时的地面熔池
+  if (charge > .1 && Math.random() < .5){
+    spawnP(x + rnd(-e.w*0.5, e.w*0.5), GROUND() - 4, "lava", 1, { sp0:30, sp1:110, g:-140, life:.4, r:5 });
+  }
+}
+function drawBug(e, x, y){
+  const img = e.phase === "dash" ? IMG.bug[1] : IMG.bug[0];
+  ctx.save();
+  if (e.phase === "dash"){
+    // 冲刺：沿冲刺方向倾斜 + 拉伸
+    ctx.translate(x, y);
+    ctx.scale(-e.dashDir * 1.18, 0.92);   // 火虫素材朝左；向右冲时镜像
+    ctx.translate(-x, -y);
+  }
+  drawMonSprite(e, x, y, img, 1.35, e.phase === "wait" ? .25 : 0, "rgba(255,200,80,", null);
+  ctx.restore();
+}
+/* ---- 地面窜火波：波头岩浆柱 + 身后余焰 ---- */
+function drawFireWaves(){
+  for (const fw of fireWaves){
+    const x = fw.x - cam;
+    if (x < -80 || x > V.W + 80) continue;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    // 波头：粗岩浆柱（底宽收顶带焰舌）
+    const h = 130;
+    const g = ctx.createLinearGradient(0, GROUND(), 0, GROUND() - h);
+    g.addColorStop(0, "rgba(255,200,90,.95)");
+    g.addColorStop(.45, "rgba(255,110,40,.8)");
+    g.addColorStop(1, "rgba(200,30,10,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(x - 22, GROUND());
+    ctx.quadraticCurveTo(x - 12, GROUND() - h*.6, x - 4 + Math.sin(elapsed*16)*4, GROUND() - h);
+    ctx.quadraticCurveTo(x + 12, GROUND() - h*.6, x + 22, GROUND());
+    ctx.closePath(); ctx.fill();
+    // 身后余焰
+    for (let i = 1; i <= 4; i++){
+      const tx = x - fw.dir*i*26;
+      const th = 40*(1 - i*0.18);
+      const tg = ctx.createLinearGradient(0, GROUND(), 0, GROUND() - th);
+      tg.addColorStop(0, "rgba(255,140,50,.55)");
+      tg.addColorStop(1, "rgba(220,40,16,0)");
+      ctx.fillStyle = tg;
+      ctx.beginPath();
+      ctx.ellipse(tx, GROUND() - th*0.5, 12, th*0.5, 0, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+function drawBlob(e, x, y){
+  // 行走怪：地面 = 摆动步态；空中 = 拉伸扑跳
+  const gnd = groundUnder(e.x, e.y, 10);
+  const airborne = e.y < gnd - 6 && !e.dead;
+  const anim = airborne
+    ? { airborne: true, vx: e.vx }
+    : { walk: true, phase: (e.anim||e.t)*3.4, amp: clamp(Math.abs(e.vx)/(e.speed||60), 0, 1) };
+  drawMonSprite(e, x, y, IMG.mon.blob, 1.55, 0, "rgba(255,150,60,", anim);
+}
+function drawSpitter(e, x, y){
+  const charge = e.phase === "charge" ? clamp(1 - e.phaseT/.48, 0, 1) : 0;
+  // 交替攻击提示：下一发是毒液时，充能光变绿 + 毒液标记
+  const glow = e.alt ? "rgba(170,230,90," : "rgba(255,150,60,";
+  const lean = sign(player.x - e.x);
+  drawMonSprite(e, x, y, IMG.mon.spitter, 1.22, charge, glow,
+    { breath: true, phase: e.t*2.1, lean, recoil: clamp(e.recoil||0, 0, 1) });
+  if (!e.dead && e.alt && charge > .1){
+    ctx.fillStyle = "#B9E86A"; ctx.font = "800 12px Arial"; ctx.textAlign = "center";
+    ctx.fillText("VENOM", x, y - e.h*1.25 - 14);
+  }
+}
+function drawSpreader(e, x, y){
+  const charge = e.phase === "charge" ? clamp(1 - e.phaseT/.62, 0, 1) : 0;
+  const lean = sign(player.x - e.x);
+  drawMonSprite(e, x, y, IMG.mon.spreader, 1.18, charge, "rgba(255,150,60,",
+    { breath: true, phase: e.t*1.7, lean, recoil: clamp(e.recoil||0, 0, 1) });
+}
+function drawFlyer(e, x, y){
+  const hover = Math.sin(e.t*2.2)*5;
+  const anchor = y - e.h*0.5 + hover;
+  ctx.save();
+  let rot = 0, anim;
+  if (e.phase === "dive" && e.diveVX !== undefined){
+    rot = clamp(Math.atan2(e.diveVY, e.diveVX)*0.4, -.6, .6);
+    anim = { fly: true, phase: e.t*11, vy: 0 };
+  } else {
+    anim = { fly: true, phase: e.t*9, vy: e.phase === "wind" ? -30 : 0 };
+  }
+  ctx.translate(x, anchor);
+  ctx.rotate(rot);
+  ctx.translate(-x, -anchor);
+  drawMonSprite(e, x, anchor, IMG.mon.flyer, 1.5, e.phase === "wind" ? .6 : 0, "rgba(255,150,60,", anim);
+  ctx.restore();
+}
+
+/* ---------- 13. 主角（CANON 定版精灵：以 FIRMAN_hero_1..5 为准，不重绘设计） ---------- */
+function drawPlayer(){
+  const w = player.w, h = player.h;
+  const x = Math.round(player.x - cam), y = Math.round(player.y);
+  const gnd = groundUnder(player.x + w/2, player.y + h, 0);
+  // 投影
+  ctx.save();
+  const shA = clamp(1 - (gnd - (player.y + h))/260, .12, 1);
+  ctx.fillStyle = "rgba(8,10,14," + (0.34*shA).toFixed(2) + ")";
+  ctx.beginPath(); ctx.ellipse(x + w/2, gnd - 2, 24*shA + 6, 7*shA + 2, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  // 无敌帧用半透明闪烁，而不是整帧消失（整帧消失会让人以为角色不见了）
+  const flick = player.invuln > 0 ? (Math.floor(elapsed*22) % 2 === 0 ? .42 : 1) : 1;
+  // 冷光底晕：把深色制服的主角从深色路面里拎出来（同时也暗示制冷身份）
+  ctx.save();
+  const gl = ctx.createRadialGradient(x + w/2, y + h*0.55, 8, x + w/2, y + h*0.55, 96);
+  gl.addColorStop(0, "rgba(150,222,240,.22)");
+  gl.addColorStop(.52, "rgba(130,210,232,.09)");
+  gl.addColorStop(1, "rgba(130,210,232,0)");
+  ctx.fillStyle = gl;
+  ctx.beginPath(); ctx.ellipse(x + w/2, y + h*0.54, 78, 96, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  /* ---- CANON 精灵帧选择 ----
+     1 站立 / 2 跑 A / 3 跑 B / 4 腾空·喷射 / 5 受击 */
+  let frame;
+  if (player.hurtT > 0) frame = IMG.hero[4];
+  else if (!player.onGround || player.jet) frame = IMG.hero[3];
+  else if (Math.abs(player.vx) > 70) frame = IMG.hero[Math.floor(player.anim) % 2 === 0 ? 1 : 2];
+  else frame = IMG.hero[0];
+
+  ctx.save();
+  ctx.globalAlpha = flick;
+  ctx.translate(x + w/2, y + h);
+  ctx.scale(1 - player.squash*0.42, 1 + player.squash);
+  if (player.facing < 0) ctx.scale(-1, 1);
+
+  if (frame && frame.ok){
+    const dh = h * 1.04;                 // 精灵贴地略放大一点，贴住脚底
+    const dw = dh * frame.naturalWidth / frame.naturalHeight;
+    ctx.drawImage(frame, -dw/2, -dh, dw, dh);
+  } else {
+    // 资源未就绪的兜底：深蓝方块人
+    ctx.fillStyle = C.navy; roundRect(-w/2, -h, w, h, 8); ctx.fill();
+  }
+
+  // 喷气尾焰（画在精灵脚底后面）
+  if (player.jet){
+    for (let i=0;i<3;i++){
+      ctx.fillStyle = "rgba(163,226,235," + (0.55 - i*0.14) + ")";
+      ctx.beginPath();
+      ctx.moveTo(6 + i*5, 0);
+      ctx.lineTo(1 + i*5, 18 + Math.random()*14);
+      ctx.lineTo(13 + i*5, 0);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  // 武器（屏幕空间，按瞄准角度旋转）
+  drawHeldWeapon(x + w/2, y + h*0.52, aimAngle);
+}
+
+function drawHeldWeapon(px, py, ang){
+  const id = WEAPON_ORDER[weaponIdx];
+  const ox = Math.cos(ang)*24, oy = Math.sin(ang)*16;
+  ctx.save();
+  ctx.translate(px + ox, py + oy);
+  ctx.rotate(ang);
+  if (player.facing < 0) ctx.scale(1, -1);
+  if (id === "freon"){
+    ctx.fillStyle = "#8FC3D2"; roundRect(-6, -6, 26, 12, 4); ctx.fill();
+    ctx.strokeStyle = "#3C6272"; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.fillStyle = C.navy; roundRect(-10, -3, 8, 6, 2); ctx.fill();
+    ctx.fillStyle = "#D8D2C0"; ctx.fillRect(20, -3.5, 12, 7);
+    ctx.fillStyle = C.red; ctx.fillRect(3, -6, 4, 12);
+    if (player.firing){
+      // 冷雾锥：让「在喷」这件事一眼可见
+      const reach = 205;
+      const cone = ctx.createLinearGradient(24, 0, 24 + reach, 0);
+      cone.addColorStop(0, "rgba(235,252,255,.55)");
+      cone.addColorStop(.45, "rgba(163,226,235,.34)");
+      cone.addColorStop(1, "rgba(130,210,232,0)");
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = cone;
+      ctx.beginPath();
+      ctx.moveTo(22, -5);
+      ctx.lineTo(24 + reach, -reach*0.42);
+      ctx.lineTo(24 + reach, reach*0.42);
+      ctx.lineTo(22, 5);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      const fl = ctx.createRadialGradient(34, 0, 1, 34, 0, 20);
+      fl.addColorStop(0, "rgba(255,255,255,.95)");
+      fl.addColorStop(.4, "rgba(163,226,235,.8)");
+      fl.addColorStop(1, "rgba(130,210,232,0)");
+      ctx.fillStyle = fl; ctx.beginPath(); ctx.arc(34, 0, 20, 0, TAU); ctx.fill();
+    }
+  } else if (id === "wrench"){
+    // 大扳手：加大一号的管钳，挥动时整体抡起来
+    const wcd = CONFIG.weapons.wrench.cd;
+    const swing = player.muzzle > 0 ? (1 - player.muzzle/wcd) : 0;
+    ctx.rotate(-1.15 + swing*2.1);
+    ctx.scale(1.7, 1.7);
+    ctx.strokeStyle = "#9AA6AE"; ctx.lineWidth = 7; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(27, 0); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-3, -2); ctx.lineTo(25, -2); ctx.stroke();
+    ctx.fillStyle = "#B8C2C8";
+    ctx.beginPath();
+    ctx.moveTo(24, -11); ctx.lineTo(36, -9); ctx.lineTo(36, 9); ctx.lineTo(24, 11);
+    ctx.lineTo(28, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#5E6A72"; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.fillStyle = C.red; ctx.fillRect(2, -7, 5, 14);      // 防滑胶柄
+    ctx.fillStyle = C.navy; ctx.fillRect(-9, -4.5, 8, 9);
+    if (swing > 0 && swing < .5){
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      const ar = ctx.createRadialGradient(38, 0, 2, 38, 0, 30);
+      ar.addColorStop(0, "rgba(255,246,200,.7)");
+      ar.addColorStop(1, "rgba(255,170,60,0)");
+      ctx.fillStyle = ar; ctx.beginPath(); ctx.arc(38, 0, 30, -0.9, 0.9); ctx.fill();
+      ctx.restore();
+    }
+  } else if (id === "drill"){
+    ctx.fillStyle = "#3F4A54"; roundRect(-8, -7, 26, 14, 4); ctx.fill();
+    ctx.fillStyle = C.brandD; ctx.fillRect(2, -7, 5, 14);
+    ctx.strokeStyle = "#C7D2D8"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(36, 0); ctx.stroke();
+    ctx.strokeStyle = "#8B979E"; ctx.lineWidth = 1.6;
+    for (let i=0;i<4;i++){
+      const bx = 20 + i*4 + (elapsed*40 % 4);
+      ctx.beginPath(); ctx.moveTo(bx, -3); ctx.lineTo(bx+2, 3); ctx.stroke();
+    }
+    ctx.fillStyle = "#1B232B"; ctx.fillRect(-12, -3, 6, 6);
+    if (player.firing && Math.random()<.6){
+      ctx.fillStyle = "rgba(255,240,180,.9)";
+      ctx.beginPath(); ctx.arc(38, 0, 5, 0, TAU); ctx.fill();
+    }
+  } else if (id === "torch"){
+    ctx.fillStyle = "#5A5F58"; roundRect(-8, -6, 22, 12, 4); ctx.fill();
+    ctx.fillStyle = "#3E463F"; ctx.fillRect(14, -3, 12, 6);
+    ctx.fillStyle = C.red; ctx.fillRect(0, -6, 4, 12);
+    if (player.firing){
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const cone = ctx.createLinearGradient(22, 0, 150, 0);
+      cone.addColorStop(0, "rgba(255,250,215,.8)");
+      cone.addColorStop(.5, "rgba(255,150,50,.45)");
+      cone.addColorStop(1, "rgba(226,60,18,0)");
+      ctx.fillStyle = cone;
+      ctx.beginPath();
+      ctx.moveTo(20, -5); ctx.lineTo(150, -56); ctx.lineTo(150, 56); ctx.lineTo(20, 5);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      const fl = ctx.createRadialGradient(30, 0, 1, 30, 0, 22);
+      fl.addColorStop(0, "rgba(255,250,210,.95)");
+      fl.addColorStop(.35, "rgba(255,170,60,.85)");
+      fl.addColorStop(1, "rgba(226,60,18,0)");
+      ctx.fillStyle = fl;
+      ctx.beginPath(); ctx.arc(30, 0, 18, 0, TAU); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/* ---------- 14. 弹道 / 粒子 / 冲击波 ---------- */
+function drawShots(){
+  // 敌方火焰弹 / 毒液弹
+  for (const b of eShots){
+    const x = b.x - cam, y = b.y;
+    if (b.kind === "venom"){
+      ctx.save();
+      // 毒液：暗绿粘稠球 + 表面气泡 + 拖尾液滴
+      const vg = ctx.createRadialGradient(x - 2, y - 3, 1, x, y, b.r*1.5);
+      vg.addColorStop(0, "rgba(214,240,150,.95)");
+      vg.addColorStop(.5, "rgba(130,190,60,.92)");
+      vg.addColorStop(1, "rgba(74,120,30,.9)");
+      ctx.fillStyle = vg;
+      ctx.beginPath(); ctx.arc(x, y, b.r*1.25 + Math.sin(b.t*18)*1.2, 0, TAU); ctx.fill();
+      ctx.fillStyle = "rgba(60,100,24,.5)";
+      ctx.beginPath(); ctx.ellipse(x - b.vx*0.03, y - b.vy*0.03, b.r*1.0, b.r*0.7, Math.atan2(b.vy,b.vx), 0, TAU); ctx.fill();
+      ctx.fillStyle = "rgba(235,255,200,.8)";
+      ctx.beginPath(); ctx.arc(x - 3, y - 4, 2.2, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + 3, y + 2, 1.4, 0, TAU); ctx.fill();
+      ctx.restore();
+      continue;
+    }
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const ang = Math.atan2(b.vy, b.vx);
+    // 1) 焰尾：三团湍流火（相位错开、大小随速度）
+    const tspd = Math.hypot(b.vx, b.vy) || 1;
+    for (let k = 0; k < 3; k++){
+      const off = 0.028 + k*0.022;
+      const tx = x - b.vx*off, ty = y - b.vy*off;
+      const wob = Math.sin(b.t*17 + k*2.1)*(3 + k*2.5);
+      const nx = -Math.sin(ang), ny = Math.cos(ang);
+      const tr = b.r*(1.6 - k*0.32);
+      const tg = ctx.createRadialGradient(tx + nx*wob, ty + ny*wob, 1, tx, ty, tr*1.9);
+      tg.addColorStop(0, k===0 ? "rgba(255,190,90,.55)" : "rgba(255,110,40,.30)");
+      tg.addColorStop(1, "rgba(200,40,16,0)");
+      ctx.fillStyle = tg;
+      ctx.beginPath(); ctx.arc(tx + nx*wob, ty + ny*wob, tr*1.9, 0, TAU); ctx.fill();
+    }
+    // 2) 外圈热浪光晕
+    const hg = ctx.createRadialGradient(x, y, b.r*0.8, x, y, b.r*3.1);
+    hg.addColorStop(0, "rgba(255,120,50,.5)");
+    hg.addColorStop(.55, "rgba(226,60,18,.22)");
+    hg.addColorStop(1, "rgba(180,30,10,0)");
+    ctx.fillStyle = hg;
+    ctx.beginPath(); ctx.arc(x, y, b.r*3.1, 0, TAU); ctx.fill();
+    // 3) 主体：白热核 → 橙 → 熔岩红
+    const g = ctx.createRadialGradient(x - b.r*0.2, y - b.r*0.25, 1, x, y, b.r*1.5);
+    g.addColorStop(0, "rgba(255,255,235,1)");
+    g.addColorStop(.35, "rgba(255,210,110,.97)");
+    g.addColorStop(.72, "rgba(255,120,40,.94)");
+    g.addColorStop(1, "rgba(190,32,10,.9)");
+    ctx.fillStyle = g;
+    const wob2 = Math.sin(b.t*22)*1.3;
+    ctx.beginPath(); ctx.arc(x, y, b.r*1.18 + wob2, 0, TAU); ctx.fill();
+    // 4) 环绕火花：两颗绕核公转的亮点
+    for (let k = 0; k < 2; k++){
+      const oa = b.t*(7 + k*3) + k*Math.PI;
+      const ox2 = x + Math.cos(oa)*b.r*1.8, oy2 = y + Math.sin(oa)*b.r*1.8;
+      const sg = ctx.createRadialGradient(ox2, oy2, 0, ox2, oy2, 4.5);
+      sg.addColorStop(0, "rgba(255,240,180,.9)");
+      sg.addColorStop(1, "rgba(255,140,50,0)");
+      ctx.fillStyle = sg;
+      ctx.beginPath(); ctx.arc(ox2, oy2, 4.5, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+    ctx.fillStyle = "#FFFDF2";
+    ctx.beginPath(); ctx.arc(x - b.r*0.15, y - b.r*0.2, b.r*0.5, 0, TAU); ctx.fill();
+  }
+  // 玩家钻枪弹：超长直线穿射（长弹道曳光）
+  for (const b of pShots){
+    const x = b.x - cam, y = b.y;
+    const a = Math.atan2(b.vy, b.vx);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const trail = 46;
+    const g = ctx.createLinearGradient(x - Math.cos(a)*trail, y - Math.sin(a)*trail, x, y);
+    g.addColorStop(0, "rgba(130,210,232,0)");
+    g.addColorStop(1, "rgba(255,240,180,.95)");
+    ctx.strokeStyle = g; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x - Math.cos(a)*trail, y - Math.sin(a)*trail); ctx.lineTo(x, y); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(x - Math.cos(a)*trail*.5, y - Math.sin(a)*trail*.5); ctx.lineTo(x, y); ctx.stroke();
+    ctx.fillStyle = "#FFF6D8";
+    ctx.beginPath(); ctx.arc(x, y, 4.2, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
+const PART_COLORS = {
+  cold:  ["rgba(163,226,235,", "rgba(130,210,232,"],
+  ice:   ["rgba(235,252,255,", "rgba(163,226,235,"],
+  ember: ["rgba(255,220,150,", "rgba(255,120,40,"],
+  flame: ["rgba(255,240,190,", "rgba(255,130,40,"],
+  lava:  ["rgba(255,190,90,",  "rgba(210,50,20,"],
+  spark: ["rgba(255,246,200,", "rgba(240,170,60,"],
+  smoke: ["rgba(90,84,78,",    "rgba(50,46,42,"],
+  dust:  ["rgba(210,190,160,", "rgba(150,130,105,"],
+  venom: ["rgba(190,235,120,", "rgba(110,170,60,"]
+};
+function drawParticles(){
+  ctx.save();
+  for (const p of particles){
+    const a = clamp(p.life/p.max, 0, 1);
+    const cols = PART_COLORS[p.kind] || PART_COLORS.spark;
+    const additive = (p.kind === "ember" || p.kind === "flame" || p.kind === "cold" ||
+                      p.kind === "spark" || p.kind === "lava");
+    ctx.globalCompositeOperation = additive ? "lighter" : "source-over";
+    if (p.kind === "ice"){
+      ctx.fillStyle = cols[0] + (a*0.9).toFixed(2) + ")";
+      ctx.save(); ctx.translate(p.x - cam, p.y); ctx.rotate(p.spin*a);
+      ctx.fillRect(-p.r*0.5, -p.r*0.5, p.r, p.r*1.6);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = cols[0] + (a*0.85).toFixed(2) + ")";
+      ctx.beginPath(); ctx.arc(p.x - cam, p.y, p.r*(0.5 + a*0.7), 0, TAU); ctx.fill();
+      if (additive){
+        ctx.fillStyle = cols[1] + (a*0.5).toFixed(2) + ")";
+        ctx.beginPath(); ctx.arc(p.x - cam, p.y, p.r*(1.2 + a*0.9), 0, TAU); ctx.fill();
+      }
+    }
+  }
+  ctx.globalCompositeOperation = "source-over";
+  ctx.restore();
+}
+
+function drawShockwaves(){
+  for (const sw of shockwaves){
+    const x = sw.x - cam, y = sw.y;
+    const k = sw.t / sw.dur;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "rgba(163,226,235," + (0.85*(1-k)).toFixed(2) + ")";
+    ctx.lineWidth = 8*(1-k) + 2;
+    ctx.beginPath(); ctx.arc(x, y, sw.r, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255," + (0.5*(1-k)).toFixed(2) + ")";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, sw.r*0.82, 0, TAU); ctx.stroke();
+    // 向内被吸的冷气
+    for (let i=0;i<12;i++){
+      const a = i/12*TAU + sw.t*3;
+      const rr = sw.r * (1.15 - (i%3)*0.12);
+      ctx.fillStyle = "rgba(200,245,255," + (0.5*(1-k)).toFixed(2) + ")";
+      ctx.beginPath(); ctx.arc(x + Math.cos(a)*rr, y + Math.sin(a)*rr, 3, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+/* ---------- 15. 热浪前沿 / 全屏效果 ---------- */
+function drawHeatFront(){
+  const hx = heatFront - cam;
+  if (hx < -240 || hx > V.W + 240) return;
+  const g = ctx.createLinearGradient(hx - 220, 0, hx + 70, 0);
+  g.addColorStop(0, "rgba(233,120,52,.88)");
+  g.addColorStop(.55, "rgba(214,60,30,.60)");
+  g.addColorStop(1, "rgba(226,90,40,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(Math.max(0, hx - 220), 0, Math.min(V.W, hx + 70) - Math.max(0, hx - 220), V.H);
+  // 火焰舌
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (let i=0;i<16;i++){
+    const yy = i/16*V.H;
+    const wob = Math.sin(yy*0.035 + elapsed*5 + i)*16;
+    const h = 26 + Math.sin(yy*0.06 + elapsed*7)*14;
+    const gg = ctx.createLinearGradient(hx + wob - 30, yy, hx + wob + 30, yy);
+    gg.addColorStop(0, "rgba(255,150,60,.28)");
+    gg.addColorStop(1, "rgba(255,90,30,0)");
+    ctx.fillStyle = gg;
+    ctx.beginPath();
+    ctx.moveTo(hx + wob - 22, yy);
+    ctx.quadraticCurveTo(hx + wob + 20, yy - h*0.5, hx + wob + 34, yy);
+    ctx.quadraticCurveTo(hx + wob + 20, yy + h*0.5, hx + wob - 22, yy);
+    ctx.fill();
+  }
+  ctx.restore();
+  // 边界线
+  ctx.strokeStyle = "rgba(255,205,140,.85)"; ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let yy=0; yy<=V.H; yy+=10) ctx.lineTo(hx + Math.sin(yy*.04 + elapsed*4)*11, yy);
+  ctx.stroke();
+}
+
+/* ---------- 16. HUD ---------- */
+const WEAPON_META = [
+  { id:"freon",  label:"氟利昂", key:"1" },
+  { id:"wrench", label:"扳手",   key:"2" },
+  { id:"drill",  label:"钻枪",   key:"3" },
+  { id:"torch",  label:"焊枪",   key:"4" }
+];
+function weaponGlyph(id, x, y, s, col){
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(s, s);
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2.2; ctx.lineCap = "round";
+  if (id === "freon"){
+    roundRect(-7, -6, 16, 13, 3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(9, -2); ctx.lineTo(15, -2); ctx.lineTo(15, 3); ctx.lineTo(9, 3); ctx.stroke();
+  } else if (id === "wrench"){
+    ctx.beginPath(); ctx.moveTo(-9, 8); ctx.lineTo(6, -7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(9, -9, 5.5, 0.6, 4.2); ctx.stroke();
+  } else if (id === "drill"){
+    roundRect(-9, -4, 11, 9, 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(2, 0); ctx.lineTo(15, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(15, -3); ctx.lineTo(17, 0); ctx.lineTo(15, 3); ctx.stroke();
+  } else if (id === "torch"){
+    roundRect(-10, -3, 13, 6, 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(3, -3); ctx.quadraticCurveTo(13, 0, 3, 3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(3, -3); ctx.quadraticCurveTo(16, -1, 3, 3); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawHUD(){
+  const P = CONFIG.player, g = ctx;
+  // ===== BOSS 血条（顶部中央、热浪条下方） =====
+  if (boss && !boss.dead){
+    const bw = 480, bx = V.W/2 - bw/2;
+    g.save();
+    g.fillStyle = "rgba(12,6,6,.8)"; g.strokeStyle = "rgba(255,120,60,.8)"; g.lineWidth = 2;
+    roundRect(bx - 4, 68, bw + 8, 22, 4); g.fill(); g.stroke();
+    const hpK = clamp(boss.hp/boss.maxHp, 0, 1);
+    const bgrad = g.createLinearGradient(bx, 0, bx + bw, 0);
+    bgrad.addColorStop(0, "#FFD24A"); bgrad.addColorStop(.5, "#FF7A2E"); bgrad.addColorStop(1, "#D42A10");
+    g.fillStyle = bgrad; roundRect(bx, 71, Math.max(6, bw*hpK), 16, 3); g.fill();
+    g.fillStyle = "#FFE9C4"; g.font = "800 11px system-ui"; g.textAlign = "center";
+    g.fillText("热浪巨兽 HEAT TITAN", V.W/2, 83);
+    g.restore();
+  }
+  // ===== 左上：工单卡 =====
+  g.save();
+  g.fillStyle = "rgba(246,236,215,.96)"; g.strokeStyle = C.navy; g.lineWidth = 2.4;
+  roundRect(22, 18, 306, 92, 5); g.fill(); g.stroke();
+  g.fillStyle = C.red; g.fillRect(22, 18, 8, 92);
+  g.fillStyle = C.navy; g.font = "800 15px system-ui,'Microsoft YaHei',sans-serif"; g.textAlign = "left";
+  g.fillText("工单 #001 · 滨海街区", 42, 42);
+  g.fillStyle = "#4B6076"; g.font = "12px system-ui,'Microsoft YaHei',sans-serif";
+  g.fillText("室外机安装 · 目标 24℃", 42, 60);
+  // 室温条
+  const tRatio = clamp((CONFIG.job.tempStart - install.temp)/(CONFIG.job.tempStart - CONFIG.job.tempEnd), 0, 1);
+  g.fillStyle = "#D5DFE4"; roundRect(42, 72, 236, 15, 7); g.fill();
+  const tg = g.createLinearGradient(42, 0, 278, 0);
+  tg.addColorStop(0, "#E9A15C"); tg.addColorStop(1, C.brandD);
+  g.fillStyle = tg; roundRect(42, 72, Math.max(8, 236*tRatio), 15, 7); g.fill();
+  g.strokeStyle = C.navy; g.lineWidth = 1.6; roundRect(42, 72, 236, 15, 7); g.stroke();
+  g.fillStyle = C.navy; g.font = "800 11px system-ui"; g.textAlign = "right";
+  g.fillText(install.temp.toFixed(1) + "℃", 290, 84);
+  g.restore();
+
+  // ===== 顶部中央：热浪推进条 =====
+  const hw = 330, hx = V.W/2 - hw/2;
+  const hRatio = clamp(1 - timer/CONFIG.heat.limit, 0, 1);
+  g.save();
+  g.fillStyle = "rgba(18,42,70,.82)"; g.strokeStyle = "rgba(130,210,232,.55)"; g.lineWidth = 1.6;
+  roundRect(hx - 2, 20, hw + 4, 40, 4); g.fill(); g.stroke();
+  g.fillStyle = "#C8DCE8"; g.font = "11px system-ui,'Microsoft YaHei',sans-serif"; g.textAlign = "left";
+  g.fillText("热浪吞城进度", hx + 10, 36);
+  g.textAlign = "right"; g.fillStyle = hRatio > .7 ? "#FF8A6B" : C.brand;
+  g.fillText(Math.round(hRatio*100) + "%", hx + hw - 10, 36);
+  // 分段条
+  const segs = 24;
+  for (let i=0;i<segs;i++){
+    const on = i/segs < hRatio;
+    g.fillStyle = on ? (i/segs > .72 ? "#E9503C" : i/segs > .45 ? "#E98C4A" : "#E9A15C") : "rgba(255,255,255,.14)";
+    g.fillRect(hx + 10 + i*((hw-20)/segs), 44, (hw-20)/segs - 2, 8);
+  }
+  g.restore();
+
+  // ===== 右上：倒计时 =====
+  const urgent = timer < 18;
+  g.save();
+  g.fillStyle = "rgba(18,42,70,.86)";
+  g.strokeStyle = urgent ? C.red : C.brand; g.lineWidth = 2;
+  roundRect(V.W - 242, 18, 220, 76, 5); g.fill(); g.stroke();
+  g.fillStyle = urgent ? "#FFB4A2" : C.brand;
+  g.font = "11px system-ui,'Microsoft YaHei',sans-serif"; g.textAlign = "left";
+  g.fillText(urgent ? "热浪逼近 · 危急" : "剩余时间", V.W - 228, 38);
+  g.fillStyle = urgent ? "#FF8A6B" : "#FFFFFF";
+  g.font = "800 32px system-ui";
+  g.fillText(Math.max(0,timer).toFixed(1) + "s", V.W - 228, 72);
+  g.textAlign = "right"; g.fillStyle = "rgba(255,255,255,.55)"; g.font = "11px system-ui";
+  g.fillText("击退 " + kills, V.W - 32, 72);
+  g.fillStyle = "#FFD98A"; g.font = "800 11px system-ui";
+  g.fillText("积分 " + (score + kills*100), V.W - 32, 38);
+  g.restore();
+
+  // ===== 左下：生命 + 气量（独立面板，与右下武器盘等高对齐） =====
+  const lx = 20, ly = V.H - 104, lw = 268;
+  g.save();
+  g.fillStyle = "rgba(10,22,38,.72)"; roundRect(lx, ly, lw, 92, 6); g.fill();
+  g.strokeStyle = "rgba(130,210,232,.22)"; g.lineWidth = 1.4; g.stroke();
+  for (let i=0;i<P.hp;i++){
+    const alive = i < player.hp;
+    g.fillStyle = alive ? C.red : "rgba(255,255,255,.10)";
+    roundRect(lx + 12 + i*30, ly + 10, 24, 22, 5); g.fill();
+    if (alive){
+      g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(lx + 17 + i*30, ly + 14, 5, 6);
+    } else {
+      g.strokeStyle = "rgba(255,255,255,.20)"; g.lineWidth = 1.4;
+      roundRect(lx + 12 + i*30, ly + 10, 24, 22, 5); g.stroke();
+    }
+  }
+  g.fillStyle = "rgba(200,222,232,.62)"; g.font = "800 11px system-ui,'Microsoft YaHei',sans-serif"; g.textAlign = "right";
+  g.fillText("生命 " + player.hp + "/" + P.hp, lx + lw - 12, ly + 26);
+  // 气量条
+  const gasR = clamp(player.gas / P.gasMax, 0, 1);
+  g.fillStyle = "rgba(255,255,255,.10)"; roundRect(lx + 12, ly + 44, lw - 24, 22, 5); g.fill();
+  g.fillStyle = gasR > .25 ? C.brand : "#E9A15C";
+  roundRect(lx + 12, ly + 44, Math.max(6, (lw - 24)*gasR), 22, 5); g.fill();
+  g.strokeStyle = "rgba(18,42,70,.45)"; g.lineWidth = 1.2;
+  roundRect(lx + 12, ly + 44, lw - 24, 22, 5); g.stroke();
+  g.fillStyle = gasR > .55 ? "#0F2438" : "#FFFFFF";
+  g.font = "800 12px system-ui,'Microsoft YaHei',sans-serif"; g.textAlign = "center";
+  g.fillText("氟利昂 / 喷气 " + Math.round(player.gas), lx + lw/2, ly + 59);
+  g.restore();
+
+  // ===== 右下：武器轮盘 =====
+  const bw = 78, gap = 8, total = WEAPON_META.length*bw + 3*gap;
+  const bx0 = V.W - total - 96, by0 = V.H - 96;
+  g.save();
+  g.fillStyle = "rgba(10,22,38,.72)"; roundRect(bx0 - 12, by0 - 12, total + 96, 92, 6); g.fill();
+  for (let i=0;i<WEAPON_META.length;i++){
+    const meta = WEAPON_META[i], cur = i === weaponIdx;
+    const bx = bx0 + i*(bw + gap);
+    g.fillStyle = cur ? "rgba(130,210,232,.92)" : "rgba(255,255,255,.08)";
+    roundRect(bx, by0, bw, 66, 4); g.fill();
+    g.strokeStyle = cur ? "#FFFFFF" : "rgba(130,210,232,.35)";
+    g.lineWidth = cur ? 2.4 : 1.4; g.stroke();
+    weaponGlyph(meta.id, bx + bw/2, by0 + 24, 1.25, cur ? C.navy : C.brandL);
+    g.fillStyle = cur ? C.navy : "rgba(220,238,246,.75)";
+    g.font = "800 11px system-ui,'Microsoft YaHei',sans-serif"; g.textAlign = "center";
+    g.fillText(meta.label, bx + bw/2, by0 + 50);
+    g.fillStyle = cur ? "rgba(18,42,70,.8)" : "rgba(130,210,232,.55)";
+    g.font = "800 10px system-ui";
+    g.fillText(meta.key, bx + bw/2, by0 + 62);
+  }
+  // 大招冷却
+  const vx = bx0 + total + 30, vy = by0 + 33;
+  const cdR = ultCd > 0 ? 1 - ultCd / CONFIG.weapons.vacuum.cd : 1;
+  g.fillStyle = "rgba(10,22,38,.9)"; g.beginPath(); g.arc(vx, vy, 22, 0, TAU); g.fill();
+  g.strokeStyle = "rgba(255,255,255,.16)"; g.lineWidth = 4;
+  g.beginPath(); g.arc(vx, vy, 18, 0, TAU); g.stroke();
+  g.strokeStyle = cdR >= 1 ? C.brand : "rgba(130,210,232,.45)"; g.lineWidth = 4;
+  g.beginPath(); g.arc(vx, vy, 18, -Math.PI/2, -Math.PI/2 + TAU*cdR); g.stroke();
+  g.fillStyle = cdR >= 1 ? C.brandL : "rgba(200,220,232,.5)";
+  g.font = "800 9px system-ui"; g.textAlign = "center";
+  g.fillText(cdR >= 1 ? "右键" : Math.ceil(ultCd) + "s", vx, vy + 3);
+  g.restore();
+
+  // 屏幕边缘热浪警戒
+  if (player.x + player.w < heatFront){
+    g.strokeStyle = "rgba(220,30,46,.8)"; g.lineWidth = 12;
+    g.strokeRect(6, 6, V.W - 12, V.H - 12);
+    g.fillStyle = "#FFD9C0"; g.font = "800 20px system-ui,'Microsoft YaHei',sans-serif"; g.textAlign = "center";
+    g.fillText("热浪已逼近身后！向右推进", V.W/2, 96);
+  }
+  // 低血量红脉冲
+  if (player.hp <= 1){
+    const a = 0.10 + Math.sin(elapsed*6)*0.05;
+    const vg = g.createRadialGradient(V.W/2, V.H/2, V.H*0.28, V.W/2, V.H/2, V.W*0.66);
+    vg.addColorStop(0, "rgba(200,20,20,0)");
+    vg.addColorStop(1, "rgba(200,20,20," + a.toFixed(2) + ")");
+    g.fillStyle = vg; g.fillRect(0,0,V.W,V.H);
+  }
+}
+
+function drawCrosshair(){
+  if (state !== "play") return;
+  const x = mouse.x, y = mouse.y;
+  const id = WEAPON_ORDER[weaponIdx];
+  const col = id === "torch" ? "#FFB05A" : id === "wrench" ? "#E9E2C8" : C.brand;
+  ctx.save();
+  ctx.strokeStyle = col; ctx.lineWidth = 2;
+  const spread = player && player.firing ? 9 + Math.sin(elapsed*30)*2 : 6;
+  ctx.beginPath(); ctx.arc(x, y, spread, 0, TAU); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x - spread - 7, y); ctx.lineTo(x - spread - 2, y);
+  ctx.moveTo(x + spread + 2, y); ctx.lineTo(x + spread + 7, y);
+  ctx.moveTo(x, y - spread - 7); ctx.lineTo(x, y - spread - 2);
+  ctx.moveTo(x, y + spread + 2); ctx.lineTo(x, y + spread + 7);
+  ctx.stroke();
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(x, y, 1.6, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- 17. 合成 ---------- */
+/* ---- 电闪雷鸣（邪恶环境强化：随热浪推进越来越密，失败结局雷暴笼罩） ---- */
+function updateLightning(dt){
+  lightning.t += dt;
+  if (lightning.flashT > 0) lightning.flashT -= dt;
+  if (lightning.t >= lightning.next){
+    lightning.t = 0;
+    const heatK = clamp(1 - timer/CONFIG.heat.limit, 0, 1);
+    lightning.next = rnd(4, 9) * (state === "lose" ? .45 : (1 - heatK*0.45));
+    lightning.flashT = .22;
+    lightning.thundered = false;
+    // 生成折线：从天顶劈向地平线
+    const bx = rnd(120, V.W - 120);
+    const pts = [[bx, -10]];
+    let px = bx;
+    const segs = 6 + (Math.random()*4|0);
+    for (let i = 1; i <= segs; i++){
+      px += rnd(-70, 70);
+      pts.push([px, -10 + (470/segs)*i * (0.9 + Math.random()*.2)]);
+    }
+    lightning.bolt = pts;
+    kick(3);
+  }
+  if (lightning.flashT > 0 && !lightning.thundered && lightning.flashT < .12){
+    lightning.thundered = true;
+    AU.play("thunder");
+  }
+}
+function drawLightning(){
+  if (lightning.flashT <= 0 || !lightning.bolt) return;
+  const k = clamp(lightning.flashT/.22, 0, 1);
+  ctx.fillStyle = "rgba(220,235,255," + (k*.30).toFixed(3) + ")";
+  ctx.fillRect(0,0,V.W,V.H);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = "rgba(240,248,255," + (.85*k).toFixed(2) + ")";
+  ctx.lineWidth = 3.2; ctx.lineJoin = "round";
+  ctx.beginPath();
+  lightning.bolt.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1]));
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(180,210,255," + (.5*k).toFixed(2) + ")";
+  ctx.lineWidth = 1.4;
+  for (let b = 0; b < 2; b++){
+    const st = lightning.bolt[2 + (b*2|0) % (lightning.bolt.length-2)];
+    ctx.beginPath(); ctx.moveTo(st[0], st[1]);
+    ctx.lineTo(st[0] + rnd(-60,60), st[1] + 40 + rnd(0,50));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ---- 失败结局：热浪吞城，建筑融化变形 ---- */
+const DOOM_SEED = [];
+for (let i = 0; i < 14; i++) DOOM_SEED.push({ x: i*210 + rnd(0,90), w: rnd(90,180), h: rnd(120,260), p: rnd(0,TAU) });
+function drawDoomCity(t){
+  const df = doomFade;
+  if (df <= .01) return;
+  const px = -cam*0.30;
+  const wob = (yy, ph) => Math.sin(t*.7 + ph + yy*0.012)*7*df;
+  ctx.save();
+  for (const b of DOOM_SEED){
+    const x = ((b.x + px) % (V.W + 260) + V.W + 260) % (V.W + 260) - 130;
+    const topY = 470 - b.h;
+    ctx.globalAlpha = df;
+    // 熔化轮廓：侧边正弦扭曲
+    ctx.beginPath();
+    ctx.moveTo(x + wob(topY, b.p), topY);
+    for (let yy = topY; yy < 470; yy += 24) ctx.lineTo(x + wob(yy, b.p), yy);
+    ctx.lineTo(x + b.w, 470);
+    for (let yy = 470; yy > topY; yy -= 24) ctx.lineTo(x + b.w + wob(yy, b.p+2), yy);
+    ctx.closePath();
+    const bg = ctx.createLinearGradient(0, topY, 0, 470);
+    bg.addColorStop(0, "rgba(30,6,4,.94)");
+    bg.addColorStop(1, "rgba(96,20,8,.88)");
+    ctx.fillStyle = bg;
+    ctx.fill();
+    // 窗洞透出火光（闪烁）
+    for (let wx2 = 0; wx2 < 3; wx2++){
+      for (let wy2 = 0; wy2 < 4; wy2++){
+        const fl = .4 + .5*Math.abs(Math.sin(t*3 + wx2 + wy2*1.7 + b.p));
+        ctx.fillStyle = "rgba(255," + (110 + (fl*90|0)) + ",30," + (df*fl*.5).toFixed(2) + ")";
+        ctx.fillRect(x + 14 + wx2*(b.w-34)/2, topY + 16 + wy2*(b.h-30)/3, 12, 16);
+      }
+    }
+    // 熔滴：从楼体下滑的炽热液滴
+    for (let d = 0; d < 3; d++){
+      const dx = x + b.w*0.2 + d*b.w*0.3;
+      const dy = topY + ((t*26 + d*40 + b.p*10) % (b.h*0.8));
+      const len = 16 + 10*Math.sin(t*2 + d);
+      const dg = ctx.createLinearGradient(0, dy - len*0.5, 0, dy + len*0.5);
+      dg.addColorStop(0, "rgba(255,180,60,0)");
+      dg.addColorStop(.5, "rgba(230,90,20,.8)");
+      dg.addColorStop(1, "rgba(160,30,10,0)");
+      ctx.fillStyle = dg;
+      ctx.beginPath(); ctx.ellipse(dx, dy, 4.5, len*0.5, 0, 0, TAU); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawPost(){
+  // 热浪强度：随倒计时推进越来越强，通关后淡出
+  const heatK = state === "title" ? .35 : clamp(1 - timer/CONFIG.heat.limit, 0, 1);
+  const hw = heatK * (1 - clearFade*0.9);
+  // 暗角
+  const v = ctx.createRadialGradient(V.W/2, V.H/2, V.H*0.34, V.W/2, V.H/2, V.W*0.72);
+  v.addColorStop(0, "rgba(0,0,0,0)");
+  v.addColorStop(1, "rgba(6,12,22,.46)");
+  ctx.fillStyle = v; ctx.fillRect(0,0,V.W,V.H);
+  // 热浪地平线扭曲：横向正弦波带（模拟空气折射），只压中下半段
+  if (hw > .06){
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 4; i++){
+      const bandY = 430 + i*58;
+      const amp = 2 + hw*3;
+      const off = Math.sin(elapsed*(2.2 + i*0.6) + i*2.1);
+      const gg = ctx.createLinearGradient(0, bandY - 26, 0, bandY + 26);
+      gg.addColorStop(0, "rgba(255,150,70,0)");
+      gg.addColorStop(.5, "rgba(255,150,70," + (0.035*hw + 0.012).toFixed(3) + ")");
+      gg.addColorStop(1, "rgba(255,150,70,0)");
+      ctx.fillStyle = gg;
+      ctx.save();
+      ctx.translate(0, off*amp);
+      ctx.fillRect(0, bandY - 26, V.W, 52);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+  // 热浪边缘热晕（橙红渐晕，压力越大越明显）
+  if (hw > .12){
+    const hg = ctx.createRadialGradient(V.W/2, V.H*0.62, V.H*0.30, V.W/2, V.H*0.62, V.W*0.70);
+    hg.addColorStop(0, "rgba(255,90,40,0)");
+    hg.addColorStop(.7, "rgba(255,90,40," + (0.04 + hw*0.09).toFixed(3) + ")");
+    hg.addColorStop(1, "rgba(214,52,18," + (0.10 + hw*0.16).toFixed(3) + ")");
+    ctx.fillStyle = hg; ctx.fillRect(0,0,V.W,V.H);
+    // 窒息感脉动（热浪临界时整屏红脉冲）
+    if (timer < 14 && state === "play"){
+      const pulse = (Math.sin(elapsed*4.2)*0.5 + 0.5) * clamp((14 - timer)/14, 0, 1);
+      ctx.fillStyle = "rgba(226,50,16," + (pulse*0.10).toFixed(3) + ")";
+      ctx.fillRect(0,0,V.W,V.H);
+    }
+  }
+  // 烈日眩光（左上）
+  if (hw > .05){
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const sun = ctx.createRadialGradient(180, 40, 8, 180, 40, 300);
+    sun.addColorStop(0, "rgba(255,244,200," + (0.16 + hw*0.12).toFixed(3) + ")");
+    sun.addColorStop(1, "rgba(255,200,120,0)");
+    ctx.fillStyle = sun; ctx.fillRect(0,0,520,340);
+    ctx.restore();
+  }
+  // 受击闪光
+  if (flash > 0){
+    ctx.fillStyle = "rgba(255,80,60," + (flash*0.55).toFixed(3) + ")";
+    ctx.fillRect(0,0,V.W,V.H);
+  }
+  // 失败结局：末日红黑压色（绝不出现蓝天）
+  if (state === "lose" && doomFade > 0){
+    ctx.fillStyle = "rgba(120,16,4," + (doomFade*0.26).toFixed(3) + ")";
+    ctx.fillRect(0,0,V.W,V.H);
+    ctx.fillStyle = "rgba(30,4,2," + (doomFade*0.30).toFixed(3) + ")";
+    ctx.fillRect(0,0,V.W, V.H*0.28);
+  }
+  // 电闪雷鸣
+  drawLightning();
+  // 通关白光过曝
+  if (state === "win"){
+    ctx.fillStyle = "rgba(255,255,255," + (clearFade*0.10).toFixed(3) + ")";
+    ctx.fillRect(0,0,V.W,V.H);
+  }
+}
+
+function render(){
+  if (!BG.built) return;   // 背景未构建完不画，避免空层/未初始化状态崩帧
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,V.W,V.H);
+  ctx.save();
+  if (shake > 0.2) ctx.translate(rnd(-shake,shake), rnd(-shake,shake));
+  drawSky(elapsed);
+  drawLayer(BG.far, BG.P.far);
+  drawLayer(BG.mid, BG.P.mid);
+  drawLayer(BG.near, BG.P.near);
+  // 层间大气霾：越靠地平线越浓，把街景压到后面
+  const hz = ctx.createLinearGradient(0, 180, 0, 600);
+  hz.addColorStop(0, "rgba(214,168,120,0)");
+  hz.addColorStop(.55, "rgba(206,152,102," + (0.20*(1-clearFade*0.7)).toFixed(3) + ")");
+  hz.addColorStop(1, "rgba(198,140,92," + (0.34*(1-clearFade*0.7)).toFixed(3) + ")");
+  ctx.fillStyle = hz; ctx.fillRect(0,0,V.W,V.H);
+  // 热浪尘霾统一压色（通关后逐渐褪去）
+  ctx.fillStyle = "rgba(72,44,26," + (0.26*(1-clearFade)).toFixed(3) + ")";
+  ctx.fillRect(-30,-30,V.W+60,V.H+60);
+  // 失败结局：融化的城市叠在街景之上（视差层）
+  drawDoomCity(elapsed);
+  drawGround();
+  drawPlatforms();
+  for (const v of LEVEL.vehicles) drawVehicle(v);
+  drawTraffic();
+  drawInstall();
+  drawVents();
+  drawEnemies();
+  drawFireWaves();
+  drawShots();
+  drawParticles();
+  drawPickups();
+  drawPlayer();
+  drawShockwaves();
+  drawHeatFront();
+  ctx.restore();
+
+  if (state === "play" || state === "paused" || state === "win" || state === "lose"){
+    drawHUD();
+  }
+  drawPost();
+  drawCrosshair();
+}
+
+/* ---------- 18. 流程 ---------- */
+function toast(t){
+  $("toast").textContent = t;
+  $("toast").style.opacity = 1;
+  toastT = 1.7;
+}
+function startGame(){
+  AU.init(); AU.startMusic();
+  resetWorld();
+  state = "play";
+  $("title").classList.add("hidden");
+  $("result").classList.add("hidden");
+  $("pause").classList.add("hidden");
+  $("hint").classList.remove("hidden");
+  $("hint").style.opacity = 1;
+  hintHidden = false;
+  toast("工单 #001 · 出发");
+  last = performance.now();
+}
+function backToTitle(){
+  state = "title";
+  $("title").classList.remove("hidden");
+  $("result").classList.add("hidden");
+  $("pause").classList.add("hidden");
+  $("hint").classList.add("hidden");
+  AU.sprayLevel(0); AU.stopMusic();
+}
+function pauseGame(on){
+  if (on && state === "play"){
+    state = "paused"; $("pause").classList.remove("hidden"); AU.sprayLevel(0); mouse.down = false;
+  } else if (!on && state === "paused"){
+    state = "play"; $("pause").classList.add("hidden"); last = performance.now();
+  }
+}
+function finish(win, why){
+  if (state !== "play") return;
+  document.title = "FIN:" + win + "," + why + ",p=" + install.progress.toFixed(2) + ",E=" + keys.has("KeyE") + ",near=" + (Math.abs((player.x + player.w/2) - (install.x + 50)) < CONFIG.job.reach) + ",x=" + player.x.toFixed(0) + ",iX=" + install.x;
+  state = win ? "win" : "lose";
+  mouse.down = false; AU.sprayLevel(0); AU.stopMusic();
+  const left = Math.max(0, timer);
+  const ratio = left / CONFIG.heat.limit;
+  const grade = !win ? "—" : (ratio > .45 ? "S" : ratio > .22 ? "A" : "B");
+  result = { win, why, grade, time: elapsed, left, hp: player.hp, kills };
+  $("rKicker").textContent = win ? "WORK ORDER COMPLETE" : "WORK ORDER FAILED";
+  $("rGrade").textContent = grade;
+  $("rTitle").textContent = win ? "安装完成！" : (why === "hp" ? "工程师倒下" : "热浪吞城");
+  $("rDesc").textContent = win
+    ? "室温降到 24℃，冷气扫过街区，天空恢复 FIRMAN 蓝。"
+    : (why === "heat"
+        ? "没能在时限内完成安装，热浪吞没了整座城市。"
+        : "被热浪生物击退，工单失败。调整武器与走位再试一次。");
+  $("rTime").textContent = elapsed.toFixed(1) + "s";
+  $("rLeft").textContent = left.toFixed(1) + "s";
+  $("rKill").textContent = kills;
+  $("rScore").textContent = score + kills*100;
+  $("rHp").textContent = player.hp + "/" + CONFIG.player.hp;
+  $("result").style.background = win ? "rgba(130,210,232,.18)" : "rgba(24,4,2,.46)";
+  $("toast").style.opacity = 0; toastT = 0;
+  $("result").classList.remove("hidden");
+  $("hint").classList.add("hidden");
+  if (!win) AU.play("lose");
+}
+
+/* ---------- 19. 主循环 ---------- */
+let last = performance.now();
+function loop(now){
+  const raw = Math.min(.05, Math.max(0, (now - last)/1000));   // 钳非负：时间倒退时不反向增长
+  last = now;
+  let dt = raw;
+  if (hitstop > 0){ hitstop -= raw; dt = raw * .16; }
+
+  if (state === "play") update(dt);
+  else if (state === "win" || state === "lose"){
+    // 胜利 → 放晴；失败 → 末日融城（绝不能在失败时把天空染蓝）
+    if (state === "win"){
+      clearFade = Math.min(1, clearFade + raw*0.75);
+      if (clearFade > .2) AU.setIntensity(0.05);
+    } else {
+      doomFade = Math.min(1, doomFade + raw*0.7);
+      updateLightning(raw);
+    }
+    for (const p of particles){ p.life -= raw; p.vy += p.g*raw; p.x += p.vx*raw; p.y += p.vy*raw; }
+    particles = particles.filter(p => p.life > 0);
+  }
+  if (toastT > 0){ toastT -= raw; if (toastT <= 0) $("toast").style.opacity = 0; }
+  if (state === "play" && !hintHidden && elapsed > 12){
+    hintHidden = true; $("hint").style.opacity = 0;
+  }
+  render();
+  AU.musicalTick();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 20. 调参 ---------- */
+CONFIG.enemyDensity = 1;
+const SLIDERS = [
+  ["speed",  "player.speed",      v => v],
+  ["jump",   "player.jump",       v => -v],
+  ["gas",    "player.gasRegen",   v => v],
+  ["hold",   "job.holdTime",      v => v],
+  ["limit",  "heat.limit",        v => v],
+  ["density","enemyDensity",      v => v],
+  ["vol",    null,                v => v]
+];
+function setPath(path, val){
+  const parts = path.split("."); let o = CONFIG;
+  for (let i=0;i<parts.length-1;i++) o = o[parts[i]];
+  o[parts[parts.length-1]] = val;
+}
+function getPath(path){
+  const parts = path.split("."); let o = CONFIG;
+  for (let i=0;i<parts.length;i++) o = o[parts[i]];
+  return o;
+}
+function syncDebug(){
+  for (const [id, path] of SLIDERS){
+    let raw;
+    if (id === "vol") raw = Math.round(AU.vol*100);
+    else raw = Math.abs(getPath(path));
+    const el = $("s_"+id); if (!el) continue;
+    el.value = raw;
+    $("v_"+id).textContent = id === "vol" ? raw + "%" : (Math.round(raw*10)/10);
+  }
+}
+for (const [id, path] of SLIDERS){
+  const el = $("s_"+id); if (!el) continue;
+  el.addEventListener("input", e => {
+    const v = parseFloat(e.target.value);
+    if (id === "vol"){
+      AU.vol = v/100;
+      if (AU.master) AU.master.gain.value = AU.muted ? 0 : AU.vol;
+      $("v_vol").textContent = Math.round(v) + "%";
+    } else {
+      setPath(path, id === "jump" ? -v : v);
+      $("v_"+id).textContent = Math.round(v*10)/10;
+      if (id === "limit") toast("时限已改，按 R 重开生效");
+      if (id === "density") toast("怪物密度已改，按 R 重开生效");
+    }
+  });
+}
+function toggleDebug(){
+  $("debug").classList.toggle("hidden");
+  syncDebug();
+}
+function toggleMute(){
+  AU.init();
+  AU.muted = !AU.muted;
+  if (AU.master) AU.master.gain.value = AU.muted ? 0 : AU.vol;
+  $("muteBtn").textContent = AU.muted ? "♪ 音乐 关" : "♪ 音乐 开";
+  if (!AU.muted) AU.startMusic();
+}
+
+/* ---------- 21. 启动 ---------- */
+$("muteBtn").addEventListener("click", e => { e.stopPropagation(); toggleMute(); });
+$("startBtn").addEventListener("click", startGame);
+$("retryBtn").addEventListener("click", startGame);
+$("backBtn").addEventListener("click", backToTitle);
+$("resumeBtn").addEventListener("click", () => pauseGame(false));
+$("applyBtn").addEventListener("click", startGame);
+$("title").addEventListener("click", e => { if (e.target.id === "title") startGame(); });
+
+window.addEventListener("error", e => { document.title = "ERR: " + e.message + " @" + e.lineno + ":" + e.colno; });
+
+let booted = false;
+let hintHidden = false;
+function boot(){
+  if (booted) return;
+  booted = true;
+  buildBackground();
+  resetWorld();
+  applyQuery();
+  render();
+}
+let assetsLeft = 3;
+function assetDone(){
+  if (--assetsLeft <= 0) boot();
+}
+for (const k of ["logo","wordmark","clear"]){
+  const im = IMG[k];
+  if (im.ok) assetDone();
+  else { im.addEventListener("load", assetDone); im.addEventListener("error", assetDone); }
+}
+setTimeout(() => { if (!booted){ assetsLeft = 0; boot(); } }, 1500);
+syncDebug();
+requestAnimationFrame(loop);
+
+/* 便于核对与批注：?play=1 直接进关；?x=3200 指定出生点；?demo=win / ?demo=lose 结算画面 */
+function applyQuery(){
+  const q = new URLSearchParams(location.search);
+  if (q.get("mute") === "1"){ AU.muted = true; $("muteBtn").textContent = "♪ 音乐 关"; }
+  if (q.get("f2") === "1") $("debug").classList.remove("hidden");
+  if (q.get("play") === "1" || q.get("x") || q.get("demo")){
+    startGame();
+    const sx = parseFloat(q.get("x") || "0");
+    if (sx > 0){
+      player.x = sx;
+      cam = clamp(sx - V.W*0.36, 0, CONFIG.world.width - V.W);
+    }
+    // ?boss=1 直接预置 BOSS（验收截图用）；?bosspos= 指定出生 x
+    if (q.get("boss") === "1"){
+      const bp = parseFloat(q.get("bosspos") || "0");
+      if (bp > 0){ player.x = bp - 500; cam = clamp(bp - 500 - V.W*0.36, 0, CONFIG.world.width - V.W); }
+      install.bossSpawned = true;
+      spawnBoss();
+      const tp = q.get("tele");
+      if (tp === "scatter" || tp === "ground" || tp === "summon"){ boss.phase = "tele_" + tp; boss.phaseT = 1.2; }
+    }
+    // ?wave=1 预置一道窜火波
+    if (q.get("wave") === "1"){
+      fireWaves.push({ x: player.x + 420, dir: -1, speed: 380, life: 3.0, tick: 0 });
+    }
+    // ?god=1 调试无敌：验收围攻 / 交通画面不被打断
+    if (q.get("god") === "1") window.GOD = true;
+    // ?drop=hp|gas|score：预置一个掉落物验收渲染
+    const dp = q.get("drop");
+    if (dp === "hp" || dp === "gas" || dp === "score"){
+      pickups.push({ x: player.x + 150, y: GROUND() - 60, vy: -140, vx: 0, type: dp, t: 0, grounded:false });
+    }
+    const wsel = parseInt(q.get("w") || "0", 10);
+    if (wsel >= 1 && wsel <= 4) selectWeapon(wsel - 1);
+    const fast = parseFloat(q.get("fast") || "0");
+    if (fast > 0){
+      const hold = q.get("fire") === "1";
+      for (let i=0;i<Math.round(fast*60);i++){
+        mouse.down = hold;
+        if (state === "play") update(1/60);
+      }
+      mouse.down = false;
+    }
+    if (q.get("siege") === "1"){ siegeOn = true; siegeT = .4; toast("⚠ 冲刺阶段：热浪生物正在围攻安装点！"); }
+    // ?burn=K（0~1）：把每台车的烧毁进度直接预置到 K，便于截图验收
+    const bk = parseFloat(q.get("burn") || "0");
+    if (bk > 0){
+      for (const v of LEVEL.vehicles) v.burn = bk * Math.max(1.6, v.w*v.h/2600);
+    }
+    // ?van=1 面包车 / ?van=2 摩的：预置一辆迎面驶来的黄色车，便于截图验收
+    const van = q.get("van");
+    if (van === "1") traffic.push({ x: cam + V.W - 200, y: GROUND(), w: 158, h: 96, vx: -352, kind: "van", t: 0, honked:true, freeze: q.get("freeze") === "1" ? 3.0 : 0 });
+    else if (van === "2") traffic.push({ x: cam + V.W - 120, y: GROUND(), w: 66, h: 64, vx: -322, kind: "okada", t: 0, honked:true, freeze: q.get("freeze") === "1" ? 3.0 : 0 });
+    const demo = q.get("demo");
+    if (demo === "win"){
+      install.progress = 1; install.done = true; install.temp = CONFIG.job.tempEnd;
+      // 仅预览用：给结算卡一组像样的数值，不参与真实流程
+      if (elapsed < 20){ elapsed = 50.4; kills = 7; }
+      timer = CONFIG.heat.limit - 26; finish(true, "done");
+    } else if (demo === "lose"){
+      timer = 0; finish(false, "heat");
+    }
+  }
+  // ?fade=1 直接把通关放晴进度拉满，便于截「品牌蓝天空」验收图
+  if (q.get("fade") === "1") clearFade = 1;
+  // ?doom=1 直接把末日融城进度拉满，便于截失败结局验收图
+  if (q.get("doom") === "1") doomFade = 1;
+  // ?bolt=1 立即落一道闪电，便于验收
+  if (q.get("bolt") === "1") lightning.next = 0.05;
+}
+</script>
+</body>
+</html>
