@@ -11,7 +11,7 @@ minima:
 # 公众号按钮：填 wechat_qr（二维码图片路径）→ 点击按钮弹出二维码；
 # 或填 wechat_url（文章/主页链接）→ 点击按钮直接跳转。两者都不填则不显示按钮。
 wechat_name: ""
-wechat_qr: ""
+wechat_qr: "/assets/wechat-qr.png"
 wechat_url: ""
 
 header_pages:

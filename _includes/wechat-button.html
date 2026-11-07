@@ -38,7 +38,8 @@
 
 {%- assign wechat_link = site.wechat_url | strip -%}
 {%- assign wechat_qr = site.wechat_qr | strip -%}
-{%- assign wechat_label = site.wechat_name | default: "我的公众号" -%}
+{%- assign wechat_label = site.wechat_name | strip -%}
+{%- capture wechat_suffix -%}{%- if wechat_label != "" -%}：{{ wechat_label }}{%- endif -%}{%- endcapture -%}
 
 {%- if wechat_qr contains "/" -%}
 <div class="wechat-bar">
@@ -47,10 +48,10 @@
       <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
         <path d="M8.7 3C4.8 3 1.6 5.7 1.6 9c0 1.9 1 3.5 2.7 4.6l-.7 2.1 2.4-1.2c.9.3 1.8.4 2.7.4h.5a5.5 5.5 0 0 1-.2-1.5c0-3.1 3-5.6 6.8-5.6h.5C15.6 4.8 12.5 3 8.7 3Zm-2.3 4.2a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Zm4.6 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8ZM22.4 13.4c0-2.7-2.6-4.9-5.8-4.9s-5.8 2.2-5.8 4.9 2.6 4.9 5.8 4.9c.7 0 1.4-.1 2.1-.3l1.9 1-.5-1.7c1.4-.9 2.3-2.3 2.3-3.9Zm-7.8-1.3a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm4 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z"/>
       </svg>
-      扫码关注公众号：{{ wechat_label }}
+      扫码关注公众号{{ wechat_suffix }}
     </summary>
     <div class="qr-panel">
-      <img src="{{ wechat_qr | relative_url }}" alt="{{ wechat_label }}二维码" loading="lazy">
+      <img src="{{ wechat_qr | relative_url }}" alt="公众号二维码" loading="lazy">
       <p>打开微信「扫一扫」即可关注</p>
     </div>
   </details>
@@ -61,7 +62,7 @@
     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
       <path d="M8.7 3C4.8 3 1.6 5.7 1.6 9c0 1.9 1 3.5 2.7 4.6l-.7 2.1 2.4-1.2c.9.3 1.8.4 2.7.4h.5a5.5 5.5 0 0 1-.2-1.5c0-3.1 3-5.6 6.8-5.6h.5C15.6 4.8 12.5 3 8.7 3Zm-2.3 4.2a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Zm4.6 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8ZM22.4 13.4c0-2.7-2.6-4.9-5.8-4.9s-5.8 2.2-5.8 4.9 2.6 4.9 5.8 4.9c.7 0 1.4-.1 2.1-.3l1.9 1-.5-1.7c1.4-.9 2.3-2.3 2.3-3.9Zm-7.8-1.3a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm4 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z"/>
     </svg>
-    前往公众号：{{ wechat_label }}
+    前往公众号{{ wechat_suffix }}
   </a>
   <span class="wechat-note">建议在微信内打开</span>
 </div>
