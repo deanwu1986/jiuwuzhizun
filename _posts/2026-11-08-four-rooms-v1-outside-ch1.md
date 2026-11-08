@@ -6,7 +6,7 @@ categories: 小说
 tags: [<四个房间> 第一卷, 门外，第一章]
 permalink: /four-rooms/vol1/outside/ch1/
 ---
-**第一章
+##第一章
 
 时间是世界上最无法琢磨的东西，它可以悄悄地改变很多人和事，却也无法改变一些人和事。
 
