@@ -4428,19 +4428,28 @@ var VEH2 = {};
   html,body{overflow:hidden;background:#07131F}
   #stage{box-shadow:none !important}
 
-  #rotate-hint{display:none;position:fixed;inset:0;z-index:2147483200;
-    background:#0b1220;color:#fff;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
-    flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
+  /* ---------- 强制横屏：竖屏时整页旋转 -90°，逻辑坐标恒按横屏处理 ---------- */
+  #ls-root{position:fixed;left:0;top:0;transform-origin:0 0;-webkit-transform-origin:0 0;
+    overflow:hidden;background:#07131F}
+
+  #rotate-hint{display:none;position:fixed;z-index:2147483600;
+    left:calc(10px + env(safe-area-inset-left));right:calc(10px + env(safe-area-inset-right));
+    top:calc(8px + env(safe-area-inset-top));
+    align-items:center;gap:10px;padding:8px 10px;border-radius:12px;
+    background:rgba(8,20,36,.90);border:1px solid rgba(94,225,255,.35);
+    color:#eaf6ff;box-shadow:0 6px 22px rgba(0,0,0,.45);
+    font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
   #rotate-hint.on{display:flex}
-  #rotate-hint .phone{width:66px;height:118px;border:3px solid #5ee1ff;border-radius:14px;
-    position:relative;animation:rh-rot 2.2s ease-in-out infinite;box-shadow:0 0 22px rgba(94,225,255,.35)}
-  #rotate-hint .phone::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
-    bottom:6px;width:24px;height:3px;border-radius:2px;background:#5ee1ff;opacity:.8}
-  @keyframes rh-rot{0%,30%{transform:rotate(0)}70%,100%{transform:rotate(90deg)}}
-  #rotate-hint h2{margin:0;font-size:19px;line-height:1.5;font-weight:600}
-  #rotate-hint p{margin:0;font-size:13px;color:#9fb3c8;line-height:1.7}
-  #rotate-hint .btn{margin-top:4px;padding:9px 20px;border:1px solid rgba(94,225,255,.55);
-    border-radius:999px;color:#5ee1ff;font-size:13px;background:rgba(94,225,255,.08)}
+  #rotate-hint .rh-ico{flex:0 0 auto;width:28px;height:28px;border:2px solid #5ee1ff;
+    border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-size:17px;color:#5ee1ff;animation:rh-rot 2.2s ease-in-out infinite}
+  @keyframes rh-rot{0%,35%{transform:rotate(0)}65%,100%{transform:rotate(-90deg)}}
+  #rotate-hint .rh-txt{flex:1;min-width:0;line-height:1.35}
+  #rotate-hint b{display:block;font-size:12px;font-weight:600}
+  #rotate-hint span{display:block;font-size:11px;color:#9fb3c8}
+  #rotate-hint .rh-x{flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+    background:rgba(255,255,255,.08);color:#9fd8ef;font-size:17px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer}
 
   #touch-ctl{position:fixed;inset:0;z-index:2147483000;display:none;pointer-events:none;
     font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
@@ -4549,6 +4558,30 @@ var VEH2 = {};
     .ng-staff img{height:42px}
     .ng-staffs{gap:5px}
   }
+  /* 强制横屏后的小高度适配：CSS 媒体查询用的是物理视口高度，
+     旋转后必须按「逻辑横屏高度」压缩，否则名字/选人面板会被挤出屏幕。 */
+  .ls-short #name-gate,.ls-short #board-panel{padding:8px}
+  .ls-short .ng-card,.ls-short .bp-card{padding:12px 14px}
+  .ls-short .ng-kicker{font-size:10px}
+  .ls-short .ng-card h2,.ls-short .bp-card h2{font-size:18px;margin:5px 0 3px}
+  .ls-short .ng-card p,.ls-short .bp-sub{margin:0 0 8px;font-size:12px;line-height:1.45}
+  .ls-short #ng-input{padding:8px 11px;font-size:15px}
+  .ls-short #ng-err{min-height:0;margin-top:4px;font-size:12px}
+  .ls-short .ng-staff-title{font-size:11px;margin:8px 0 4px}
+  .ls-short .ng-staffs{gap:5px}
+  .ls-short .ng-staff{padding:5px 2px 6px}
+  .ls-short .ng-staff img{height:34px;margin-bottom:2px}
+  .ls-short .ng-staff b{font-size:10px;height:2.2em}
+  .ls-short .ng-staff span,.ls-short .ng-staff em{font-size:9px;margin-top:1px}
+  .ls-short .ng-btn,.ls-short .bp-btn{margin-top:9px;padding:8px 14px;font-size:14px}
+  .ls-short #bp-list{max-height:150px}
+  .ls-short #tc-joy{width:104px;height:104px}
+  .ls-short #tc-knob{width:46px;height:46px;margin:-23px 0 0 -23px}
+  .ls-short #tc-fire{width:84px;height:84px;font-size:14px;bottom:calc(8px + env(safe-area-inset-bottom))}
+  .ls-short #tc-install{width:54px;height:54px;font-size:11px;right:calc(110px + env(safe-area-inset-right));bottom:calc(24px + env(safe-area-inset-bottom))}
+  .ls-short #tc-next{width:46px;height:46px;font-size:11px;bottom:calc(100px + env(safe-area-inset-bottom))}
+  .ls-short #tc-ult{width:46px;height:46px;font-size:11px;right:calc(80px + env(safe-area-inset-right));bottom:calc(142px + env(safe-area-inset-bottom))}
+  .ls-short #tc-down{width:44px;height:44px;font-size:11px;right:calc(116px + env(safe-area-inset-right));bottom:calc(90px + env(safe-area-inset-bottom))}
 </style>
 
 <div id="fab-bar">
@@ -4584,10 +4617,9 @@ var VEH2 = {};
 </div>
 
 <div id="rotate-hint">
-  <div class="phone"></div>
-  <h2>请把手机横过来</h2>
-  <p>本游戏为横屏设计，旋转手机后体验最佳<br>（iPhone 需在控制中心关闭竖屏锁定）</p>
-  <div class="btn" id="rotate-hint-btn">仍用竖屏继续</div>
+  <div class="rh-ico">↻</div>
+  <div class="rh-txt"><b>已强制横屏</b><span>把手机横过来，画面即可正向显示</span></div>
+  <div class="rh-x" id="rotate-hint-btn">×</div>
 </div>
 
 <div id="touch-ctl">
@@ -4608,13 +4640,60 @@ var VEH2 = {};
   var stage = document.getElementById('stage');
   var cv    = document.querySelector('canvas');
   var VW = 1280, VH = 720;
+  var forceTouch = /[?&]touch=1/.test(location.search);
+  function isTouch(){ return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || forceTouch; }
 
-  /* ---------- 舞台等比放大到整个视口 ---------- */
+  /* ---------- 强制横屏：把游戏与所有 UI 装进一个可旋转的根容器 ---------- */
+  var root = document.getElementById('ls-root');
+  if(!root){
+    root = document.createElement('div');
+    root.id = 'ls-root';
+    document.body.insertBefore(root, document.body.firstChild);
+    ['stage','fab-bar','name-gate','board-panel','touch-ctl'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el) return;
+      root.appendChild(el);
+      if(id !== 'stage') el.style.position = 'absolute';
+    });
+  }
+  var hint    = document.getElementById('rotate-hint');
+  var hintBtn = document.getElementById('rotate-hint-btn');
+  var rotated = false, Lw = 0, Lh = 0, scale = 1, dismissed = false;
+
+  /* 触摸坐标垫片：物理竖屏坐标 -> 逻辑横屏坐标。
+     transform: translate(0,ph) rotate(-90deg)  ⇒  局部(x,y) = (ph - 物理y, 物理x) */
+  function logicalize(e){
+    if(!rotated || e.isTrusted === false) return;
+    try{
+      var px = e.clientX, py = e.clientY, ph = window.innerHeight;
+      if(typeof px !== 'number' || typeof py !== 'number') return;
+      Object.defineProperty(e, 'clientX', {configurable:true, value:ph - py});
+      Object.defineProperty(e, 'clientY', {configurable:true, value:px});
+      Object.defineProperty(e, 'pageX',   {configurable:true, value:ph - py});
+      Object.defineProperty(e, 'pageY',   {configurable:true, value:px});
+    }catch(err){}
+  }
+  ['pointerdown','pointermove','pointerup','pointercancel',
+   'mousedown','mousemove','mouseup','click','dblclick','contextmenu'].forEach(function(t){
+    window.addEventListener(t, logicalize, {capture:true, passive:true});
+  });
+
+  /* 画布矩形垫片：旋转后 getBoundingClientRect 返回物理包围盒（宽高互换），
+     游戏内部 pointerPos() 需要逻辑横屏矩形，否则准星会整体错位。 */
+  function patchRect(){
+    if(!cv) return;
+    if(!rotated){ try{ delete cv.getBoundingClientRect; }catch(e){} return; }
+    var w = VW * scale, h = VH * scale, l = (Lw - w) / 2, t = (Lh - h) / 2;
+    var R = {x:l, y:t, left:l, top:t, width:w, height:h, right:l + w, bottom:t + h};
+    R.toJSON = function(){ return R; };
+    try { cv.getBoundingClientRect = function(){ return R; }; } catch(e){}
+  }
+
+  /* ---------- 舞台等比放大到整个「逻辑横屏」视口 ---------- */
   function fitStage(){
     if(!stage) return;
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var s  = Math.min(vw / VW, vh / VH) * 0.999;
-    stage.style.position = 'fixed';
+    scale = Math.min(Lw / VW, Lh / VH) * 0.999;
+    stage.style.position = 'absolute';
     stage.style.left = '50%';
     stage.style.top  = '50%';
     stage.style.width  = VW + 'px';
@@ -4622,18 +4701,31 @@ var VEH2 = {};
     stage.style.margin = '0';
     stage.style.aspectRatio = 'auto';
     stage.style.transformOrigin = 'center center';
-    stage.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+    stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
+    patchRect();
   }
-  fitStage();
-  window.addEventListener('resize', fitStage);
+  function updateOrient(){
+    if(hint) hint.classList.toggle('on', rotated && !dismissed);
+  }
+  function applyOrient(){
+    var pw = window.innerWidth, ph = window.innerHeight;
+    rotated = isTouch() && ph > pw;
+    Lw = rotated ? ph : pw;
+    Lh = rotated ? pw : ph;
+    root.style.width  = Lw + 'px';
+    root.style.height = Lh + 'px';
+    root.style.transform = rotated ? ('translate(0,' + ph + 'px) rotate(-90deg)') : 'none';
+    document.documentElement.classList.toggle('ls-short', Lh <= 520);
+    fitStage();
+    updateOrient();
+  }
+  applyOrient();
+  window.addEventListener('resize', applyOrient);
   window.addEventListener('orientationchange', function(){
-    setTimeout(function(){ fitStage(); window.dispatchEvent(new Event('resize')); }, 350);
+    setTimeout(function(){ applyOrient(); window.dispatchEvent(new Event('resize')); }, 350);
   });
 
-  function isTouch(){ return ('ontouchstart' in window) || navigator.maxTouchPoints > 0; }
-  function isPortrait(){ return window.innerHeight > window.innerWidth; }
-
-  /* ---------- 首次交互自动全屏 + 自动锁横屏 ---------- */
+  /* ---------- 系统级强制：全屏 + 锁定横屏（Android Chrome 等支持） ---------- */
   var entered = false;
   function enterFull(){
     var el = document.documentElement;
@@ -4648,36 +4740,23 @@ var VEH2 = {};
       } else if(screen.lockOrientation){ screen.lockOrientation('landscape'); }
       else if(screen.webkitLockOrientation){ screen.webkitLockOrientation('landscape'); }
     } catch(e){}
-    setTimeout(function(){ fitStage(); window.dispatchEvent(new Event('resize')); }, 400);
+    setTimeout(applyOrient, 400);
   }
   function onFirstGesture(){ if(entered) return; entered = true; enterFull(); }
   ['pointerdown','touchstart','click','keydown'].forEach(function(t){
-    window.addEventListener(t, onFirstGesture, {passive:true});
+    window.addEventListener(t, onFirstGesture, {capture:true, passive:true});
   });
+  window.__firmanEnterFull = enterFull;   // 「进入游戏」按钮里再触发一次，确保处于用户手势中
   ['fullscreenchange','webkitfullscreenchange'].forEach(function(t){
-    document.addEventListener(t, function(){ setTimeout(fitStage, 200); });
+    document.addEventListener(t, function(){ setTimeout(applyOrient, 200); });
   });
-
-  /* ---------- 竖屏提示（iOS 无法强制旋转系统方向时兜底） ---------- */
-  var hint = document.getElementById('rotate-hint');
-  var hintBtn = document.getElementById('rotate-hint-btn');
-  var dismissed = false;
-  function updateOrient(){
-    if(dismissed || !isTouch()){ hint.classList.remove('on'); return; }
-    var playing = false;
-    try { playing = (typeof state !== 'undefined' && state === 'play'); } catch(e){}
-    hint.classList.toggle('on', isPortrait() && playing);
-  }
   hintBtn.addEventListener('click', function(e){
     e.stopPropagation(); e.preventDefault();
-    dismissed = true; hint.classList.remove('on');
+    dismissed = true; updateOrient();
   });
-  window.addEventListener('resize', updateOrient);
-  window.addEventListener('orientationchange', function(){ setTimeout(updateOrient, 150); });
-  updateOrient();
+  setTimeout(function(){ dismissed = true; updateOrient(); }, 7000);  // 提示条不长期遮挡画面
 
-  var forceTouch = /[?&]touch=1/.test(location.search);
-  if(!isTouch() && !forceTouch) return;
+  if(!isTouch()) return;
 
   /* 触屏控件只在进行游戏时出现：
      回到标题页 / 结算 / 暂停 / 选人面板时隐藏，否则摇杆区会吞掉页面按钮的点击 */
@@ -5012,6 +5091,7 @@ var VEH2 = {};
   });
   document.getElementById('ng-ok').addEventListener('click', function(e){
     e.preventDefault();
+    try { if(window.__firmanEnterFull) window.__firmanEnterFull(); } catch(err){}
     var n = (input.value || '').trim().slice(0,12);
     if(!n){ err.textContent = '请先填个名字'; input.focus(); return; }
     err.textContent = '';
