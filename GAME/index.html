@@ -536,8 +536,11 @@ var Sound={
    o.type='sine';o.frequency.setValueAtTime(i%2?820:650,T);var v=.025+.075*(i/n);
    g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(v,T+.12);g.gain.linearRampToValueAtTime(0,T+.7);
    o.connect(g);g.connect(this.master);o.start(T);o.stop(T+.72);}},
- whisper:function(text){if(!this.enabled)return;if(AUDIO_FILES.whisper){var a=new Audio(AUDIO_FILES.whisper);a.volume=.22;a.play().catch(function(){});return;}
-  try{if(!window.speechSynthesis)return;var u=new SpeechSynthesisUtterance(text);u.lang='zh-CN';u.rate=.72;u.pitch=1.08;u.volume=.24;window.speechSynthesis.speak(u);}catch(e){}},
+ whisper:function(text){
+  if(!this.enabled||document.visibilityState!=='visible')return;
+  if(window.speechSynthesis&&(window.speechSynthesis.speaking||window.speechSynthesis.pending))return;
+  if(AUDIO_FILES.whisper){var a=new Audio(AUDIO_FILES.whisper);a.volume=.14;a.play().catch(function(){});return;}
+  try{if(!window.speechSynthesis)return;var u=new SpeechSynthesisUtterance(text);u.lang='zh-CN';u.rate=.72;u.pitch=1.08;u.volume=.13;window.speechSynthesis.speak(u);}catch(e){}},
  /* 交叉淡入淡出切换配乐；没有文件时自动回落到程序化和弦 */
  bgm:function(key){
   if(!key||!this.enabled)return;
@@ -569,7 +572,8 @@ var Sound={
   this.fadeAll=setInterval(function(){
    var k=Math.min(1,(Date.now()-t0)/D);
    Object.keys(els).forEach(function(x){try{els[x].volume=self.bgmVol*(1-k);}catch(e){}});
-   if(k>=1){clearInterval(self.fadeAll);Object.keys(els).forEach(function(x){els[x].pause();});}
+   if(k>=1){clearInterval(self.fadeAll);Object.keys(els).forEach(function(x){els[x].pause();});
+    self.bgmWant=null;self.bgmKey=null;self.stopVoices();}
   },50);
  },
  retryPending:function(){
@@ -586,17 +590,60 @@ var Sound={
    this.padGain.gain.linearRampToValueAtTime(.16,this.ctx.currentTime+2.2);
   }
   this.schedule();},
- schedule:function(){var self=this;clearTimeout(this.timer);this.timer=setTimeout(function(){
-   if(self.enabled&&self.room>=0){var w=['……醒醒','爸爸','我们都在呢','别着急','回来吧'];self.whisper(w[Math.floor(Math.random()*w.length)]);}
-   self.schedule();},26000+Math.random()*16000);},
- setEnabled:function(on){this.enabled=on;if(this.master)this.master.gain.value=on?.18:0;
-  var self=this;
-  if(!on){Object.keys(this.bgmEls).forEach(function(k){self.bgmEls[k].pause();});this.bgmKey=null;
-   if(window.speechSynthesis)window.speechSynthesis.cancel();}
-  else if(this.bgmWant){this.bgmKey=null;this.bgm(this.bgmWant);}}
+ /* 呢喃：只在游戏进行中 + 页面可见时低频出现；隐藏、终局、关闭声音都不再排队 */
+ schedule:function(){
+  var self=this;clearTimeout(this.timer);this.timer=null;
+  if(!this.enabled||this.room<0||document.visibilityState!=='visible')return;
+  if(typeof S!=='undefined'&&S.phase!=='play')return;
+  this.timer=setTimeout(function(){
+   self.timer=null;
+   if(!self.enabled||self.room<0||document.visibilityState!=='visible')return;
+   if(typeof S!=='undefined'&&S.phase!=='play')return;
+   var w=['……醒醒','爸爸','我们都在呢','别着急','回来吧'];
+   self.whisper(w[Math.floor(Math.random()*w.length)]);
+   self.schedule();
+  },75000+Math.random()*45000);
+ },
+ /* 只收语音，不动配乐：终局独白开始时用 */
+ stopVoices:function(){
+  clearTimeout(this.timer);this.timer=null;
+  try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}
+ },
+ /* 页面不可见 / 关闭 / 声音关：定时器、TTS、配乐、Web Audio 一次性全收住 */
+ hush:function(){
+  this.stopVoices();
+  clearInterval(this.fadeTimer);clearInterval(this.fadeAll);
+  var self=this;Object.keys(this.bgmEls).forEach(function(k){try{self.bgmEls[k].pause();}catch(e){}});
+  if(this.master)try{this.master.gain.value=0;}catch(e){}
+  if(this.ctx&&this.ctx.state==='running'&&this.ctx.suspend)try{this.ctx.suspend();}catch(e){}
+ },
+ /* 回到前台：恢复音床、从当前进度淡回配乐、重启低频呢喃 */
+ wake:function(){
+  if(!this.enabled)return;
+  if(this.master)try{this.master.gain.value=.18;}catch(e){}
+  if(this.ctx&&this.ctx.state==='suspended'&&this.ctx.resume)try{this.ctx.resume();}catch(e){}
+  if(this.bgmWant&&this.room>=0&&document.visibilityState==='visible'
+     &&!(typeof S!=='undefined'&&S.phase==='dark')){
+   var k=this.bgmWant;this.bgmKey=null;this.bgm(k);
+  }
+  this.schedule();
+ },
+ setEnabled:function(on){this.enabled=on;if(!on)this.hush();else this.wake();}
 };
 /* 浏览器若拦截自动播放，在下一次点击时补播 */
 document.addEventListener('click',function(){Sound.retryPending();},true);
+/* 声音生命周期：切后台 / 关页 / 失焦立即静音停 TTS，回前台再续，避免多个页面叠加循环朗读 */
+(function(){
+ var quiet=function(){Sound.hush();};
+ var back=function(){if(document.visibilityState==='visible')Sound.wake();};
+ document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible')back();else quiet();
+ });
+ window.addEventListener('pagehide',quiet);
+ window.addEventListener('beforeunload',quiet);
+ window.addEventListener('blur',quiet);
+ window.addEventListener('focus',back);
+})();
 
 /* ======================= 状态 ======================= */
 var S={phase:'intro',room:0,found:{},l2:{},clues:[],roomClues:[],toolFound:[],opened:{},dim:false,
@@ -1145,7 +1192,7 @@ function setCine(item,text){el('cineItem').textContent=item;el('cineLine').textC
 function startFinale(){
  S.phase='finale';showOnly('cinematic');el('stage').style.display='none';
  /* 文字独白开始，配乐换成肖邦夜曲，一直延续到病房，片尾淡出 */
- Sound.bgm('finale');
+ Sound.stopVoices();Sound.bgm('finale');
  var i=0;
  function paper(){
   if(i<PAPER_LINES.length){setCine('相框后面',PAPER_LINES[i]);i++;setTimeout(paper,2600);}
