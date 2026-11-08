@@ -1,0 +1,49 @@
+配乐来源 / Music sources  —  v7.1 配乐替换（用户选定 1 / 2 / 3 / 4 / 6）
+================================================================
+当前游戏只使用下面 5 段；全部来自 Wikimedia Commons，为 CC0 1.0 Universal
+（公有领域贡献）或公有领域录音，可自由使用、修改、再发布，无需署名。
+统一转码为 96 kbps MP3、统一到相同响度、加淡入淡出；未改变旋律与编曲。
+
+gymnopedie-no1.mp3   第一间房 / 舒缓钢琴
+                      萨蒂《吉诺佩蒂 第 1 号》，Michael Laucke 演奏
+                      Public domain
+                      https://commons.wikimedia.org/wiki/File:Satie_Gymnopedie_No_1_performed_by_Michael_Laucke.flac
+
+ck61-ambient.mp3      第二间房 / 无旋律氛围
+                      Ambient music test, Yamaha CK61
+                      CC0 1.0
+                      https://commons.wikimedia.org/wiki/File:Ambient_music_test,_Yamaha_CK61.flac
+
+resolution.mp3        第三间房 / 极静氛围；四件看清、门谜题待解时也退到这一段
+                      Komiku - 69 - Resolution.ogg
+                      CC0 1.0
+                      https://commons.wikimedia.org/wiki/File:Komiku_-_69_-_Resolution.ogg
+
+gymnopedie-no3.mp3    第四间房 / 更暗的钢琴
+                      Gymnopédie no.3（萨蒂）
+                      CC0 1.0
+                      https://commons.wikimedia.org/wiki/File:Gymnop%C3%A9die_no.3.ogg
+
+nocturne-finale.mp3   终局文字独白起 → 病房 → 片尾淡出
+                      肖邦《夜曲 Op.27 No.1》，历史录音（原文件仅 49 秒，
+                      以 4 秒交叉淡化接成约 3 分 05 秒，覆盖整段独白）
+                      Public domain
+                      https://commons.wikimedia.org/wiki/File:Chopin_Nocturne_Op.27_No.1.oga
+
+许可：
+  CC0 1.0 Universal      https://creativecommons.org/publicdomain/zero/1.0/
+  Public domain 录音     作品与录音均已进入公有领域（见各文件页说明）
+
+剧情用法：
+  第一间房 r1 / 第二间房 r2 / 第三间房 r3 / 第四间房 r4
+  四件 L2 齐备、门谜题待解时统一退到 r3（极静），不再使用任何紧张鼓点
+  终局文字独白起切 finale，延续到病房，片尾由 fadeOutBgm() 淡出
+  背景音量 bgmVol = 0.12（替换前为 0.24）
+
+已停用：
+  替换前的 5 段 Komiku 配乐（calm / warm / uneasy / tense / sad）已移出播放目录，
+  备份在 assets/audio/legacy/，不再被游戏引用，需要回退时可移回。
+  其中 uneasy / tense 高频能量约 20%、带节拍，是「太吵」的主要来源，已彻底移除。
+
+（车祸、耳鸣、心跳、救护车、耳边呢喃仍为程序化音效或中文 TTS，
+  AUDIO_FILES.siren / crash / whisper 留作后续替换接口；片尾仍只有署名句。）
