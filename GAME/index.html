@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>四间房 · 完整版 v7.1</title>
+<style>
+:root{--paper:#f3f0e8;--card:#fffdf8;--line:#d9d4c6;--ink:#20201e;--muted:#6b685f;--gold:#8a6a2c;--goldbg:#f6ecd4;--green:#2f6b46}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0;height:100%;background:#12110f;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;overflow:hidden}
+#stage{display:flex;height:100vh;height:100dvh;width:100vw;position:relative}
+html,body{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+#stage,#panel,#scene{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+
+/* ---------- 场景：底图与遮挡块共用同一百分比坐标系 ---------- */
+#scene{position:relative;flex:1;min-width:0;overflow:hidden;background:#12110f}
+#sceneBg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;filter:saturate(80%) brightness(.92);transition:filter 1.1s}
+#scene.dim #sceneBg{filter:saturate(62%) brightness(.55)}
+/* 暗角压在遮挡块之上：底图与遮挡块一起被压暗，边界才不会露出来 */
+#vignette{position:absolute;inset:0;pointer-events:none;z-index:5;background:radial-gradient(ellipse at 45% 45%,rgba(0,0,0,0) 38%,rgba(0,0,0,.58) 100%)}
+#roomTag{position:absolute;left:18px;top:15px;z-index:9;color:#efe7d4;font-size:13px;letter-spacing:.08em;text-shadow:0 2px 8px #000;pointer-events:none}
+#roomTag small{display:block;font-size:11px;opacity:.7;letter-spacing:.02em;margin-top:3px}
+#log{position:absolute;left:18px;bottom:14px;z-index:9;max-width:62%;color:#f2ece0;font-size:14px;line-height:1.85;text-shadow:0 2px 10px #000;pointer-events:none}
+#log p{margin:0}
+#log p.dim{opacity:.6;font-size:12.5px}
+
+#caches,#covers,#slots{position:absolute;inset:0;pointer-events:none}
+/* 与 #sceneBg 的 filter 过渡完全同步，换房 / 调暗时遮挡块不会短暂跳色 */
+#caches{z-index:2}#covers{z-index:4;transition:filter 1.1s}#slots{z-index:7}
+.cache,.cover,.pslot,.hangTarget{position:absolute;pointer-events:auto}
+.cavity{position:absolute;inset:14%;border-radius:12px;background:radial-gradient(ellipse at center,rgba(12,11,9,.68) 0%,rgba(18,16,13,.38) 48%,rgba(18,16,13,0) 80%);transition:opacity .55s}
+.cache.taken .cavity{opacity:0}
+.cover.gone{opacity:0 !important;pointer-events:none}
+.hiddenItem{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52%;max-width:110px;max-height:78%;border:0;background:none;padding:0;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .45s,transform .25s}
+.hiddenItem.visible{opacity:.94;pointer-events:auto}
+.hiddenItem:hover{transform:translate(-50%,-50%) scale(1.07)}
+.hiddenItem img{display:block;width:100%;height:auto;max-height:78%;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.85)) brightness(.88)}
+.hiddenItem.paper img{border:2px solid #2b2721;border-radius:2px;box-shadow:0 6px 15px rgba(0,0,0,.8);background:#3a352d}
+.hiddenItem.picked{display:none}
+
+/* 写实遮挡块：从底图裁出，静止时与背景像素级重合；无文字标签 */
+.cover{cursor:grab;transition:transform .5s cubic-bezier(.22,.7,.3,1),opacity .5s,filter .3s;filter:brightness(1)}
+.cover:hover{filter:brightness(1.055)}
+.cover img{display:block;width:100%;height:100%;object-fit:fill}
+/* 第四间房：关掉鼠标扫过的高亮，遮挡块与背景完全同色 */
+#scene.blend .cover:hover{filter:none}
+/* 第四间房：只留中心一小块可拖，和图三柜角胶带同一强度 */
+.cover .hit{display:none;position:absolute;pointer-events:auto}
+#scene.blend .cover{pointer-events:none}
+#scene.blend .cover .hit{display:block;left:31%;top:33%;width:38%;height:34%;border-radius:3px}
+.cover.moved{transform:translate(-36%,-15%) rotate(-6deg);opacity:.17;pointer-events:none;cursor:default}
+.cover.tugged{transform:translate(4%,0) scaleX(.9);opacity:.9}
+.cover.shake{animation:shake .25s}
+@keyframes shake{0%,100%{margin-left:0}25%{margin-left:-4px}75%{margin-left:4px}}
+.hangTarget{cursor:pointer;border:1px dashed rgba(230,214,175,0);border-radius:6px;transition:border-color .3s,background .3s;z-index:6}
+.hangTarget:hover{border-color:rgba(230,214,175,.5);background:rgba(230,214,175,.07)}
+.hangTarget.armed{border-color:rgba(230,214,175,.75);background:rgba(230,214,175,.12)}
+
+.pslot{transform:translate(-50%,-50%);width:92px;min-height:60px;border:1.5px dashed rgba(230,214,175,.55);background:rgba(16,15,12,.55);color:#e5d8b9;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border-radius:5px;cursor:pointer;padding:5px;gap:3px}
+.pslot .sn{font-size:10px;opacity:.6}
+.pslot .sv{font-size:11px;line-height:1.35}
+.pslot.filled{border-style:solid;border-color:var(--gold);background:rgba(138,106,44,.32)}
+.pslot.shake{animation:shake .25s}
+#doorSpot{position:absolute;left:66%;top:22%;z-index:8;transform:translate(-50%,-50%);width:64px;height:100px;border:2px solid rgba(230,214,175,.85);border-radius:5px;background:rgba(20,18,14,.42);box-shadow:0 0 26px rgba(226,198,132,.4);display:flex;align-items:center;justify-content:center;cursor:pointer}
+#doorSpot::before{content:'';width:9px;height:9px;border-radius:50%;background:#d8bf8a;box-shadow:0 0 14px 4px rgba(216,191,138,.65)}
+#doorSpot:hover{background:rgba(90,74,44,.6)}
+
+/* ---------- 右侧面板 ---------- */
+#panel{width:344px;flex:none;background:var(--paper);border-left:1px solid #cfc9ba;overflow-y:scroll;overflow-x:hidden;padding:14px 20px 26px 14px;z-index:10;scrollbar-width:none}
+#panel::-webkit-scrollbar{width:0;height:0}
+#panel h1{font-size:15px;font-weight:600;margin:0 0 2px;display:flex;align-items:center;justify-content:space-between}
+/* 自绘侧边移动条：不依赖原生滚动条渲染，轨道可见、滑块可拖 */
+#panelBar{position:absolute;right:0;top:0;bottom:0;width:13px;z-index:12;background:linear-gradient(90deg,#efeade,#e7e0cf);border-left:1px solid #d8d0ba;cursor:pointer}
+#panelThumb{position:absolute;left:2px;right:2px;top:0;height:56px;min-height:48px;background:#8a7647;border:1px solid #6c5933;border-radius:7px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);cursor:grab}
+#panelThumb:hover{background:#6f5c33}
+#panelThumb.grabbing{cursor:grabbing;background:#7a683d}
+.jumps{display:flex;gap:4px;font-weight:400}
+#panel .sub{font-size:11.5px;color:var(--muted);margin:0 0 12px}
+.tiny{font-size:9.5px;color:var(--muted);font-weight:400;letter-spacing:0}
+.sec{margin:0 0 13px}
+.sec>h2{font-size:11.5px;font-weight:600;letter-spacing:.07em;color:#575349;margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.cell{position:relative;aspect-ratio:1/1;min-height:42px;border:1px solid var(--line);border-radius:4px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:2px;overflow:hidden}
+.cell.empty{border-style:dashed;background:transparent;cursor:default}
+.cell img{width:76%;height:76%;object-fit:contain}
+.cell .nm{font-size:9px;line-height:1.15;color:#4a4740;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell.sel{outline:2px solid var(--gold);outline-offset:1px}
+.cell.done::after{content:'✓';position:absolute;right:3px;top:1px;font-size:11px;color:var(--green)}
+.cell.shake{animation:shake .25s}
+#reader{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:9px 10px;font-size:12.5px;line-height:1.75;min-height:62px}
+#reader .rt{font-weight:600;margin-bottom:3px}
+#reader .r2{color:#7a3b30;border-top:1px dashed var(--line);padding-top:5px;margin-top:5px}
+#reader .unread{color:var(--muted);font-size:11.5px}
+#clueRow{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 8px}
+.chip{font-size:10.5px;background:#fff;border:1px solid #d8cfb6;color:#6a5426;padding:2px 6px;border-radius:11px;cursor:pointer}
+.chip.sel{outline:2px solid var(--gold)}
+.qslots{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px}
+.qslot{aspect-ratio:1/1;border:1px dashed var(--line);border-radius:4px;display:flex;align-items:center;justify-content:center;color:#a8a296;font-size:14px;background:rgba(255,255,255,.35);font-size:10px;text-align:center;padding:2px}
+.qslot.on{background:var(--goldbg);border-color:#d9c391;color:var(--gold);line-height:1.3}
+.task{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:4px;padding:7px 9px;font-size:11.5px;line-height:1.6;margin-bottom:6px}
+.task.side{border-left-color:#5b6f8c}
+.task.done{border-left-color:var(--green);opacity:.72}
+.task .kind{font-size:9.5px;color:var(--gold);letter-spacing:.05em}
+.task.side .kind{color:#5b6f8c}
+.task .goal{font-size:10.5px;color:var(--muted);margin-top:2px}
+.steps{display:flex;gap:4px;margin-top:5px}
+.steps i{flex:1;height:4px;background:#ddd7c8;border-radius:2px}
+.steps i.on{background:var(--gold)}
+#boardEmpty{font-size:11.5px;color:var(--muted);margin-bottom:7px}
+.eviGroup{border:1px dashed #cfc6ac;border-radius:4px;padding:5px;margin-bottom:5px;background:rgba(255,255,255,.4)}
+.eviGroup .eh{font-size:10px;color:var(--muted);margin-bottom:4px}
+.eviSlots{display:flex;gap:4px}
+.eviSlot{flex:1;height:34px;border:1px dashed #d5cdb8;border-radius:3px;background:#fffdf8;display:flex;align-items:center;justify-content:center;font-size:9px;color:#a39b87;text-align:center;cursor:pointer;line-height:1.2;padding:2px}
+.eviSlot.filled{border-style:solid;border-color:#b9a878;background:var(--goldbg);color:#6a5426}
+.eviGroup.solved{border-color:var(--green)}
+.eviHelp{font-size:10.5px;color:var(--muted);line-height:1.6;margin-bottom:7px}
+.eviGroup .br{font-size:10.5px;color:#4b4335;margin-top:4px;line-height:1.6}
+.eviGroup:hover{border-color:#b9a878}
+.eviGroup.focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(184,148,72,.18)}
+.eviGroup .eh{display:flex;align-items:flex-start;gap:4px;cursor:pointer}
+.eviGroup .eh .ask{flex:1;font-size:11px;color:#4b4335;line-height:1.5}
+.eviGroup.solved .eh .ask{color:var(--green)}
+.eviGroup .eh .cnt{font-size:9.5px;color:var(--muted);white-space:nowrap}
+.eviGroup .eh .mini{font-size:9px;border:1px solid #d8cfb6;background:#fffdf6;border-radius:3px;padding:0 4px;color:#6a5426;cursor:pointer}
+.eviGroup .tip{font-size:10.5px;color:#6a5426;background:var(--goldbg);border-radius:3px;padding:4px 6px;margin-top:4px;line-height:1.5}
+.jump{font-size:10px;border:1px solid #cfc4a6;background:#fffdf6;border-radius:4px;padding:2px 7px;color:#5c4a22;cursor:pointer}
+.jump:hover{background:var(--goldbg)}
+.clueGroup{display:flex;align-items:flex-start;gap:4px;margin-bottom:4px}
+.clueGroup .ch{font-size:9px;color:var(--muted);white-space:nowrap;padding-top:3px;min-width:34px}
+.clueGroup.now .ch{color:var(--gold)}
+.clueGroup .cgs{display:flex;flex-wrap:wrap;gap:4px}
+.readonly{font-size:10px;color:var(--muted);margin:0 0 4px}
+.pslot .sv.empty-hint{color:#9d9584;font-size:9px}
+#hintBox{font-size:11.5px;color:#6a5426;background:var(--goldbg);border-radius:4px;padding:6px 8px;min-height:28px}
+.btn{width:100%;margin-top:6px;padding:6px;border:1px solid #cfc4a6;background:#fffdf6;border-radius:4px;color:#5c4a22;font-size:11.5px;cursor:pointer}
+.btn:hover{background:var(--goldbg)}
+
+/* ---------- 开场 / 过场 / 终局 ---------- */
+#intro,#seq,#cinematic,#ending,#dark{position:fixed;inset:0;z-index:40}
+#intro{background:#0b0a09;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#intro .dot{width:9px;height:9px;border-radius:50%;background:#c9b98f;box-shadow:0 0 22px 6px rgba(201,185,143,.35);animation:breathe 2.6s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:.9;transform:scale(1.25)}}
+#seq{background:#000;z-index:38}
+#seqImg{width:100%;height:100%;object-fit:cover;filter:contrast(1.15)}
+#flash,#blackout{position:absolute;inset:0;opacity:0;pointer-events:none}
+#flash{background:#fff}#blackout{background:#000;transition:opacity .35s}
+#seqSub{position:absolute;left:0;right:0;top:46%;transform:translateY(-50%);text-align:center;color:#e6ddc9;font-size:21px;line-height:2.2;letter-spacing:.05em;white-space:pre-line;opacity:0;transition:opacity 1.1s;pointer-events:none;text-shadow:0 2px 20px #000}
+#seqSub.show{opacity:.94}
+#seqClick{position:absolute;left:0;right:0;bottom:13%;text-align:center;color:#c9b98f;font-size:12px;letter-spacing:.32em;opacity:0;transition:opacity 1s;pointer-events:none}
+#seqClick.show{opacity:.9;animation:breathe 2.6s ease-in-out infinite}
+#cinematic{background:#191814;z-index:36;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+#cineItem{font-size:11px;letter-spacing:.24em;color:#8d8779;min-height:18px;margin-bottom:22px}
+#cineLine{font-size:25px;line-height:1.9;max-width:720px;min-height:80px;margin:0;padding:0 20px;color:#e9e3d5}
+#ending{background:radial-gradient(ellipse at 50% 40%,#503f2b,#171410 76%);z-index:36;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#f0e6d2}
+#endArt{display:flex;align-items:flex-end;justify-content:center;gap:24px;margin-bottom:26px;opacity:.7}
+#endArt svg{width:60px;height:106px;fill:none;stroke:#d9c49b;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#endLine{font-size:17px;min-height:56px;max-width:560px;margin:0 0 18px;line-height:1.9}
+#btnHand{font-family:inherit;font-size:13px;cursor:pointer;border:1px solid rgba(230,222,200,.4);background:rgba(30,27,22,.7);color:#f0e6d2;border-radius:6px;padding:9px 18px}
+#btnHand:hover{background:rgba(80,66,44,.8)}
+#dark{background:#0c0b09;color:#8b867a;z-index:37;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px}
+#credits{margin-top:16px;font-size:12px;letter-spacing:.06em;color:#a89f8c}
+@media(max-width:1000px) and (pointer:fine){#panel{width:290px}#log{font-size:12.5px;max-width:55%}}
+
+/* ---------- 触屏拖动的跟随浮层 ---------- */
+#touchGhost{position:fixed;z-index:99;pointer-events:none;transform:translate(-50%,-50%);
+  min-width:76px;max-width:140px;padding:5px 8px;border-radius:8px;border:1px solid #b9a878;
+  background:rgba(255,253,246,.94);box-shadow:0 6px 20px rgba(0,0,0,.4);
+  display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:#4b4335;text-align:center}
+#touchGhost img{width:50px;height:50px;object-fit:contain}
+
+/* ---------- 手机竖屏：场景在上、面板在下，场景保持 3:2 不被拉扁 ---------- */
+@media (orientation:portrait) and (max-width:820px){
+ #stage{flex-direction:column}
+ #scene{flex:none;width:100%;height:auto;aspect-ratio:3/2}
+ #panel{width:100%;flex:1 1 auto;min-height:0;height:auto;border-left:0;border-top:2px solid #cfc9ba;
+   padding:10px 12px calc(24px + env(safe-area-inset-bottom));
+   overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#8a7647 transparent}
+ #panel::-webkit-scrollbar{width:5px}
+ #panel::-webkit-scrollbar-thumb{background:#8a7647;border-radius:3px}
+ /* 竖屏改回原生触摸滚动，自绘移动条只留桌面使用 */
+ #panelBar{display:none}
+ #panel h1{font-size:16px}
+ #panel .sub{font-size:12px;margin-bottom:10px}
+ .sec{margin-bottom:15px}
+ .sec>h2{font-size:12.5px;margin-bottom:8px}
+ .grid{gap:6px}
+ .cell{min-height:58px;border-radius:6px}
+ .cell img{width:70%;height:70%}
+ .cell .nm{font-size:11px}
+ #reader{font-size:13.5px;line-height:1.7;min-height:70px;padding:11px 12px}
+ #reader .r2,#reader .unread{font-size:12.5px}
+ #clueRow{gap:6px}
+ .chip{font-size:12.5px;padding:7px 11px;min-height:36px;display:inline-flex;align-items:center}
+ .clueGroup .ch{font-size:11px;min-width:38px}
+ .qslot{font-size:11px;min-height:46px}
+ .task{font-size:13px;padding:9px 11px;line-height:1.65}
+ .task .kind{font-size:11px}
+ .task .goal,.readonly,.eviHelp,.eviGroup .br,.eviGroup .tip{font-size:11.5px}
+ .eviGroup{padding:7px;margin-bottom:7px}
+ .eviSlot{height:46px;font-size:11px}
+ .eviGroup .eh .ask{font-size:12.5px}
+ .eviGroup .eh .mini{min-height:32px;min-width:46px;font-size:11px}
+ .jump{min-height:34px;font-size:11.5px;padding:5px 9px}
+ .btn{min-height:46px;font-size:14px;margin-top:8px}
+ #hintBox{font-size:12.5px;min-height:36px;line-height:1.5}
+ .pslot{width:19vw;min-height:46px;font-size:10px;padding:3px;gap:2px}
+ .pslot .sn,.pslot .sv,.pslot .sv.empty-hint{font-size:10px}
+ #doorSpot{width:46px;height:72px}
+ .hiddenItem{max-width:76px}
+ #roomTag{left:10px;top:8px;font-size:12px}
+ #roomTag small{font-size:10px}
+ #log{left:8px;right:8px;bottom:6px;max-width:none;font-size:11px;line-height:1.5;
+   padding:5px 7px;border-radius:4px;background:linear-gradient(90deg,rgba(0,0,0,.66),rgba(0,0,0,.3))}
+ #log p.dim{font-size:10.5px}
+ /* 第四房隐藏保留，但手机上把可拖命中区放大到手指能点中 */
+ #scene.blend .cover .hit{left:25%;top:27%;width:50%;height:46%}
+ #seqSub{font-size:18px;line-height:1.9;top:42%}
+ #seqClick{bottom:calc(12% + env(safe-area-inset-bottom));font-size:13px}
+ #cinematic{padding:24px 20px calc(24px + env(safe-area-inset-bottom))}
+ #cineItem{font-size:11px}
+ #cineLine{font-size:19px;line-height:1.8;min-height:64px;padding:0 8px}
+ #ending{padding:20px calc(16px + env(safe-area-inset-left)) calc(20px + env(safe-area-inset-bottom))}
+ #endArt{gap:14px;margin-bottom:18px}
+ #endArt svg{width:44px;height:78px}
+ #endArt svg:last-child{width:32px;height:58px}
+ #endLine{font-size:16px;line-height:1.8;padding:0 10px}
+ #btnHand{font-size:15px;padding:12px 24px;min-height:48px}
+ #credits{font-size:12px;padding:0 16px;text-align:center}
+}
+
+/* ---------- 手机横屏：保持左右分栏，压缩面板与字号 ---------- */
+@media (orientation:landscape) and (max-height:560px) and (pointer:coarse){
+ #panel{width:46%;max-width:330px;padding:8px 12px}
+ #panelBar{width:8px}#panelThumb{left:1px;right:1px;min-height:40px}
+ #panel h1{font-size:14px}
+ .cell{min-height:46px}.cell .nm{font-size:10px}
+ #reader{font-size:12.5px;min-height:56px}
+ .btn{min-height:40px}
+ .chip{font-size:11.5px;padding:4px 8px}
+ .eviSlot{height:38px}
+ #roomTag{font-size:11px;top:8px;left:10px}
+ #log{font-size:11.5px;bottom:8px;left:10px}
+ #seqSub{font-size:19px;top:44%}
+ #seqClick{bottom:10%}
+ #cineLine{font-size:20px;min-height:60px}
+ #endArt svg{width:44px;height:78px}
+ #endArt svg:last-child{width:30px;height:54px}
+}
+</style>
+</head>
+<body>
+
+<div id="intro" title="点击开始"><div class="dot"></div></div>
+
+<div id="seq" hidden>
+  <img id="seqImg" src="assets/intro/crash.png" alt="">
+  <div id="flash"></div><div id="blackout"></div>
+  <div id="seqSub"></div>
+  <div id="seqClick">点 击 进 入</div>
+</div>
+
+<div id="stage">
+  <div id="scene">
+    <img id="sceneBg" src="assets/rooms/room1.png" alt="">
+    <div id="vignette"></div>
+    <div id="roomTag"></div>
+    <div id="caches"></div>
+    <div id="slots"></div>
+    <div id="covers"></div>
+    <div id="doorSpot" hidden title="下一间"></div>
+    <div id="log"></div>
+  </div>
+  <div id="panel">
+    <h1>四间房 <span class="jumps"><button class="jump" id="btnJumpInv" data-jump="invMainSec" type="button">↑ 物品仓</button><button class="jump" id="btnJumpEvi" data-jump="evidence" type="button">↓ 证据板</button><button class="jump" id="btnJumpBoard" data-jump="board" type="button">↓ 任务</button></span></h1>
+    <p class="sub" id="panelSub">主道具 / 辅助道具 → 拖到一起鉴定 → 证据板 → 任务线索</p>
+    <div class="sec" id="invMainSec"><h2>物 品 仓 · 主 道 具 <span class="tiny">按找到的先后摆放</span></h2><div class="grid" id="invMain"></div></div>
+    <div class="sec" id="invToolsSec"><h2>物 品 仓 · 辅 助 道 具</h2><div class="grid" id="invTools"></div></div>
+    <div class="sec"><h2>查 看 · 组 合 鉴 定</h2><div id="reader"></div></div>
+    <div class="sec"><h2>证 据 板 · 支 线</h2><div id="evidence"></div></div>
+    <div class="sec"><h2>任 务 线 索</h2><div id="board"></div></div>
+    <div class="sec"><h2>提 示 · 主 动 索 取</h2><div id="hintBox"></div>
+      <button class="btn" id="btnHint">要一条提示</button>
+      <button class="btn" id="btnAudio">声音：开</button>
+      <div class="tiny" id="musicTag" style="margin-top:6px">配乐：—</div>
+    </div>
+  </div>
+  <div id="panelBar" title="拖动可上下移动面板"><div id="panelThumb"></div></div>
+</div>
+
+<div id="cinematic" hidden><div id="cineItem"></div><div id="cineLine"></div></div>
+<div id="ending" hidden>
+  <div id="endArt">
+    <svg viewBox="0 0 60 106"><circle cx="30" cy="17" r="11"/><path d="M30 28 V68 M30 38 L12 55 M30 38 L48 55 M30 68 L18 100 M30 68 L42 100"/></svg>
+    <svg viewBox="0 0 60 106"><circle cx="30" cy="17" r="11"/><path d="M30 28 V68 M30 38 L12 55 M30 38 L48 55 M30 68 L18 100 M30 68 L42 100"/></svg>
+    <svg viewBox="0 0 60 106" style="width:40px;height:72px"><circle cx="30" cy="20" r="12"/><path d="M30 32 V70 M30 42 L14 56 M30 42 L46 56 M30 70 L20 100 M30 70 L40 100"/></svg>
+  </div>
+  <div id="endLine"></div>
+  <button id="btnHand" hidden>把手递过去</button>
+</div>
+<div id="dark" hidden><div>四间房</div><div id="credits" hidden></div></div>
+
+<script>
+/* 触屏设备：手机上改用「点选 → 点目标」为主，并额外支持长按拖动 */
+var IS_TOUCH=(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)
+  ||(('ontouchstart' in window)&&navigator.maxTouchPoints>0);
+/* ======================= 文案数据（与 escape-room-text-v2.txt 逐句一致） ======================= */
+var CLUE={
+ C1_TOMORROW:'明天会好一点',C1_PAGE7:'第 7 页',C1_DONTWANT:'我不想',C1_EMPTYSEAT:'空着的后座',
+ C2_TOGETHER:'一起玩',C2_047:'0:47',C2_WALL:'一直对着墙',C2_NOADDRESS:'空着的收件人',
+ C3_1201:'1201',C3_SHE_MARRIED:'她嫁的人',C3_ASH:'烧过一封信',C3_NEVEROFF:'一直没摘',
+ C4_NIGHT:'夜里起来过很多次',C4_HANDS:'结总系不好',C4_COMEHOME:'今天会早点回来吗',C4_THATDAY:'照片那天'
+};
+var MAIN={
+ R1_DOLL:{name:'脏污的玩偶',img:'assets/items/R1_DOLL.png',paper:false,l1:'这是我小时候的那个玩偶，走到哪儿都抱着。抱得有点脏了。',l2:'肚子那块布被摸得发白，上面歪歪扭扭写着「没关系，明天会好一点。」字是他自己写的。替玩偶回的。',tool:'T1_BASIN',clue:'C1_TOMORROW'},
+ R1_COMIC:{name:'翻旧了的漫画书',img:'assets/items/R1_COMIC.png',paper:true,l1:'翻了很多遍，每本都舍不得扔。看不清是哪一页翻得最旧。',l2:'灯斜过来，只有一页的纸边起了毛。',tool:'T1_LAMP',clue:'C1_PAGE7'},
+ R1_KITE:{name:'破烂的风筝',img:'assets/items/R1_KITE.png',paper:false,l1:'春天放的，飞得特别高。断骨上像是写过什么。',l2:'铅笔小字，写得极轻：「我不想」。后面撕掉了。',tool:'T1_GLASS',clue:'C1_DONTWANT'},
+ R1_BIKE:{name:'坏掉的自行车',img:'assets/items/R1_BIKE.png',paper:false,l1:'学会骑的那天，绕了整个院子。后座蒙着一层灰。',l2:'擦干净，后座的漆是新的。从来没载过人。',tool:'T1_RAG',clue:'C1_EMPTYSEAT'},
+ R2_CONSOLE:{name:'插卡的游戏机',img:'assets/items/R2_CONSOLE.png',paper:false,l1:'爸爸出差带回来的，我高兴了好几天。卡槽里卡着东西。',l2:'夹出来的是半截断卡。断口是被掰断的。',tool:'T2_TWEEZER',clue:'C2_TOGETHER'},
+ R2_TAPE:{name:'偶像的磁带',img:'assets/items/R2_TAPE.png',paper:false,l1:'偶像的歌，听了不下一百遍。每次都倒回同一段。',l2:'铅笔插进孔里转了很多圈。同一段，又回来了。',tool:'T2_PENCIL',clue:'C2_047'},
+ R2_BALL:{name:'磨损的足球',img:'assets/items/R2_BALL.png',paper:false,l1:'放学后在楼下踢到天黑。天黑了就看不清球了。',l2:'手电斜着照过去，只有一面磨平了。',tool:'T2_TORCH',clue:'C2_WALL'},
+ R2_LETTER:{name:'未寄出的情书',img:'assets/items/R2_LETTER.png',paper:true,l1:'写了一个晚上，字改了又改。纸折得展不开。',l2:'压平之后，收件人一栏是空的。',tool:'T2_BOOK',clue:'C2_NOADDRESS'},
+ R3_PHOTO:{name:'和女生的合影',img:'assets/items/R3_PHOTO.png',paper:true,l1:'那年夏天，和她拍的。照片成了两半。',l2:'拼回去，背面写着「慢慢来。」',tool:'T3_TAPE',clue:'C3_1201'},
+ R3_LIGHTER:{name:'打火机',img:'assets/items/R3_LIGHTER.png',paper:false,l1:'她送的生日礼物。里面好像有东西。',l2:'刷出来的是纸灰。没有烟渍。',tool:'T3_BRUSH',clue:'C3_ASH'},
+ R3_INVITE:{name:'好朋友的婚礼请柬',img:'assets/items/R3_INVITE.png',paper:true,l1:'好朋友结婚，我去喝了喜酒。背面不太干净。',l2:'灰擦开，两个名字都在。新娘是她，新郎是他。',tool:'T3_ERASER',clue:'C3_SHE_MARRIED'},
+ R3_RING:{name:'婚戒',img:'assets/items/R3_RING.png',paper:false,l1:'婚礼那天，手有点抖。内圈看不清了。',l2:'擦过之后，内圈磨得发亮。一直没摘过。',tool:'T3_CLOTH',clue:'C3_NEVEROFF'},
+ R4_PACIFIER:{name:'孩子的奶嘴',img:'assets/items/R4_PACIFIER.png',paper:false,l1:'孩子整夜含着它才肯睡。抽屉里还有一个没拆的。',l2:'两个并排放着，旧的那个被攥得变了形。',tool:'T4_PACI_NEW',clue:'C4_NIGHT'},
+ R4_TIE:{name:'妻子送的领带',img:'assets/items/R4_TIE.png',paper:false,l1:'她挑的，说这个颜色衬我。每天早上都要系一遍。',l2:'镜子里的结是歪的。同一位置，有一道反复系出来的旧折痕。',tool:'T4_MIRROR',clue:'C4_HANDS'},
+ R4_CARD:{name:'女儿的卡片',img:'assets/items/R4_CARD.png',paper:true,l1:'女儿塞在我包里的。折角压住了下面那行。',l2:'「爸爸我爱你」下面还有一行更小的：「今天会早点回来吗」',tool:'T4_RULER',clue:'C4_COMEHOME'},
+ R4_FAMILY:{name:'全家福',img:'assets/items/R4_FAMILY.png',paper:true,l1:'去年拍的，三个人都在。墙上还空着一块。',l2:'相框后面滑出一张纸，折了四折。',tool:null,clue:'C4_THATDAY'}
+};
+var TOOL={
+ T1_BASIN:{name:'搪瓷水盆',img:'assets/tools/T1_BASIN.png',pick:'盆里还有半盆水。',result:'布上的字露出来了。'},
+ T1_LAMP:{name:'台灯',img:'assets/tools/T1_LAMP.png',pick:'灯还能亮。屋里太亮了，照不出纸边。',result:'那一页的毛边显出来了。'},
+ T1_GLASS:{name:'放大镜',img:'assets/tools/T1_GLASS.png',pick:'镜片上有一道划痕。',result:'断骨内侧的小字显出来了。'},
+ T1_RAG:{name:'旧抹布',img:'assets/tools/T1_RAG.png',pick:'叠得很整齐，还是干的。',result:'灰下面是一层没坐过的新漆。'},
+ T2_TWEEZER:{name:'镊子',img:'assets/tools/T2_TWEEZER.png',pick:'笔筒里插着一把镊子。',result:'半截断卡被夹了出来。'},
+ T2_PENCIL:{name:'铅笔',img:'assets/tools/T2_PENCIL.png',pick:'笔尖削得很短。',result:'带子转回原处，还是那一句。'},
+ T2_TORCH:{name:'手电筒',img:'assets/tools/T2_TORCH.png',pick:'电池还有电。',result:'只有一面是平的。'},
+ T2_BOOK:{name:'厚字典',img:'assets/tools/T2_BOOK.png',pick:'书脊裂了，压东西正好。',result:'纸展平了，那一栏空着。'},
+ T3_TAPE:{name:'透明胶带',img:'assets/tools/T3_TAPE.png',pick:'胶带的头翘起来一点。',result:'两半对齐了，背面有字。'},
+ T3_ERASER:{name:'软橡皮',img:'assets/tools/T3_ERASER.png',pick:'橡皮一角被磨圆了。',result:'灰底下是两个名字。'},
+ T3_BRUSH:{name:'小刷子',img:'assets/tools/T3_BRUSH.png',pick:'刷毛硬了。',result:'扫出来的是灰白色的纸灰。'},
+ T3_CLOTH:{name:'绒布',img:'assets/tools/T3_CLOTH.png',pick:'眼镜盒里剩的一块布。',result:'内圈亮得能照见人。'},
+ T4_PACI_NEW:{name:'没拆封的奶嘴',img:'assets/tools/T4_PACI_NEW.png',pick:'塑料袋还没撕开。',result:'两个一比，差的那一块是手攥出来的。'},
+ T4_MIRROR:{name:'镜子',img:'assets/tools/T4_MIRROR.png',pick:'柜门内侧那面，边上有一道雾。',result:'结是歪的，折痕是旧的。'},
+ T4_RULER:{name:'直尺',img:'assets/tools/T4_RULER.png',pick:'刻度磨掉了一半。',result:'折角压住的那行字露出来了。'},
+ T4_NAIL:{name:'墙上的空钉',img:'assets/tools/T4_NAIL.png',pick:'墙上有一块没被晒到的浅色印子，中间一枚钉。',result:'照片挂稳了。相框后面有东西滑出来。'}
+};
+var CHAIN={
+ 1:['R1_DOLL','R1_COMIC','R1_KITE','R1_BIKE'],
+ 2:['R2_CONSOLE','R2_TAPE','R2_BALL','R2_LETTER'],
+ 3:['R3_PHOTO','R3_INVITE','R3_LIGHTER','R3_RING'],
+ 4:['R4_PACIFIER','R4_TIE','R4_CARD','R4_FAMILY']
+};
+/* 遮挡块照 4 张背景图的家具位置标定；辅助道具乱序散落，主道具严格按 CHAIN 解锁 */
+var HOLDS={
+ 1:[
+  {id:'r1_quilt',rect:[16,56,34,74],holds:'R1_DOLL',kind:'main'},
+  {id:'r1_bedbox',rect:[3,78,26,98],holds:'T1_BASIN',kind:'tool'},
+  {id:'r1_shelf',rect:[49,30,69,48],holds:'R1_COMIC',kind:'main'},
+  {id:'r1_drawer',rect:[36,50,52,60],holds:'T1_LAMP',kind:'tool'},
+  {id:'r1_bededge',rect:[30,76,46,92],holds:'R1_KITE',kind:'main'},
+  {id:'r1_wardrobe',rect:[79,17,100,54],holds:'R1_BIKE',kind:'main'},
+  {id:'r1_frontbox',rect:[63,56,100,99],holds:'T1_GLASS',kind:'tool'},
+  {id:'r1_shelf2',rect:[54,49,62,64],holds:'T1_RAG',kind:'tool'},
+  {id:'r1_curtain',rect:[67,2,78,29],holds:'ENV_DIM',kind:'env'}
+ ],
+ 2:[
+  {id:'r2_bunk',rect:[0,11,31,45],holds:'R2_CONSOLE',kind:'main'},
+  {id:'r2_pen',rect:[31,36,42,49],holds:'T2_PENCIL',kind:'tool'},
+  {id:'r2_books',rect:[47,44,61,52],holds:'T2_BOOK',kind:'tool'},
+  {id:'r2_leftdraw',rect:[31,53,42,64],holds:'T2_TWEEZER',kind:'tool'},
+  {id:'r2_rightdoor',rect:[52,54,61,76],holds:'R2_LETTER',kind:'main'},
+  {id:'r2_lowerbed',rect:[0,55,30,74],holds:'R2_TAPE',kind:'main'},
+  {id:'r2_locker',rect:[64,17,79,76],holds:'R2_BALL',kind:'main'},
+  {id:'r2_floorbox',rect:[0,78,18,96],holds:'T2_TORCH',kind:'tool'},
+  {id:'r2_blind',rect:[86,2,98,50],holds:'ENV_DIM',kind:'env'}
+ ],
+ 3:[
+  {id:'r3_cushion',rect:[0,42,34,61],holds:'R3_PHOTO',kind:'main'},
+  {id:'r3_seat',rect:[0,62,34,87],holds:'R3_LIGHTER',kind:'main'},
+  {id:'r3_sidecab',rect:[0,88,13,100],holds:'T3_TAPE',kind:'tool'},
+  {id:'r3_mailbox',rect:[86,21,92,38],holds:'R3_INVITE',kind:'main'},
+  {id:'r3_shelf',rect:[36,45,43,60],holds:'T3_ERASER',kind:'tool'},
+  {id:'r3_tablebox',rect:[43,56,58,68],holds:'R3_RING',kind:'main'},
+  {id:'r3_undertable',rect:[39,70,58,84],holds:'T3_BRUSH',kind:'tool'},
+  {id:'r3_counter',rect:[65,41,85,55],holds:'T3_CLOTH',kind:'tool'},
+  {id:'r3_lampshade',rect:[70,4,83,23],holds:'ENV_DIM',kind:'env'}
+ ],
+ 4:[
+  {id:'r4_cushion',rect:[0,53,21,72],holds:'R4_PACIFIER',kind:'main'},
+  {id:'r4_blanket',rect:[0,73,20,90],holds:'T4_MIRROR',kind:'tool'},
+  {id:'r4_cabinetL',rect:[33,54,41,70],holds:'T4_PACI_NEW',kind:'tool'},
+  {id:'r4_cabinetR',rect:[41,54,49,70],holds:'R4_FAMILY',kind:'main'},
+  {id:'r4_coat',rect:[64,41,72,69],holds:'R4_TIE',kind:'main'},
+  {id:'r4_frame',rect:[76,12,85,35],holds:'R4_CARD',kind:'main'},
+  {id:'r4_table',rect:[27,76,40,86],holds:'T4_RULER',kind:'tool'},
+  {id:'r4_lampshade',rect:[12,32,20,42],holds:'ENV_DIM',kind:'env'}
+ ]
+};
+var WALLMARK={id:'r4_wallmark',rect:[57,21,64,45]};
+var ROOMS=[
+ {n:1,name:'第一间房间',sub:'儿童房 · 找到东西，只是刚拿到提问权',bg:'assets/rooms/room1.png',sat:80,chord:[196,246.9,293.7],
+  main:'把陪着他长大的四样东西找齐，放回原位',goal:'四件 L2 齐备 → 四件归位 → 门开',door:'把童年收好',dtip:'把它们放回原来的位置。'},
+ {n:2,name:'第二间房间',sub:'上学宿舍 · 四次想靠近别人',bg:'assets/rooms/room2.png',sat:60,chord:[174.6,220,261.6],
+  main:'弄清他四次想靠近别人，分别停在哪一步',goal:'四件 L2 齐备 → 按先后排序',door:'四次没成',dtip:'按他想靠近别人的先后排。'},
+ {n:3,name:'第三间房间',sub:'单身公寓 · 那封信后来去哪了',bg:'assets/rooms/room3.png',sat:40,chord:[164.8,207.7,246.9],
+  main:'把那封信的去向连成一条线',goal:'空收件人 → 她嫁的人 → 烧过一封信 → 照片背面的数字',door:'因果连线',dtip:'把因果连成一条线；这四个槽只放线索卡。'},
+ {n:4,name:'第四间房间',sub:'全家的房间 · 墙上还空着一块',bg:'assets/rooms/room4.png',sat:20,chord:[146.8,185,220],
+  main:'打开最后一层，把照片挂回去',goal:'三格字锁 → 挂墙 → 想起一切',door:'他为什么没能早点回来',dtip:'把三张卡按顺序放进锁里。'}
+];
+var PUZZLE={
+ 1:{kind:'place',slots:[{id:'bed',label:'床',x:20,y:70},{id:'shelf',label:'书架',x:58,y:38},{id:'window',label:'窗边',x:74,y:38},{id:'corner',label:'墙角',x:90,y:82}],
+    answer:{bed:'R1_DOLL',shelf:'R1_COMIC',window:'R1_KITE',corner:'R1_BIKE'},accept:'main'},
+ 2:{kind:'order',slots:[{id:'o1',label:'一',x:22,y:88},{id:'o2',label:'二',x:40,y:88},{id:'o3',label:'三',x:58,y:88},{id:'o4',label:'四',x:76,y:88}],
+    answer:{o1:'R2_CONSOLE',o2:'R2_TAPE',o3:'R2_BALL',o4:'R2_LETTER'},accept:'main'},
+ 3:{kind:'chain',slots:[{id:'c1',label:'一',x:22,y:88},{id:'c2',label:'二',x:40,y:88},{id:'c3',label:'三',x:58,y:88},{id:'c4',label:'四',x:76,y:88}],
+    answer:{c1:'C2_NOADDRESS',c2:'C3_SHE_MARRIED',c3:'C3_ASH',c4:'C3_1201'},accept:'clue'},
+ 4:{kind:'lock',slots:[{id:'l1',label:'一',x:32,y:88},{id:'l2',label:'二',x:50,y:88},{id:'l3',label:'三',x:68,y:88}],
+    answer:{l1:'C4_NIGHT',l2:'C4_HANDS',l3:'C4_COMEHOME'},accept:'clue'}
+};
+/* v7 组合鉴定：每件主道具要凑齐 2–3 样东西才看得清第二层。
+   need 里既有辅助道具，也有已找回的主道具（当对照物）；env:'dim' 要先把光挡住。
+   主道具的发现顺序完全随机，只有全家福仍受最后一道锁约束。 */
+var IDENT={
+ R1_DOLL:{need:['T1_BASIN','T1_RAG'],why:'布上的字被汗渍糊住了。'},
+ R1_COMIC:{need:['T1_LAMP','T1_GLASS'],env:'dim',why:'纸边要斜着的光才显出来。'},
+ R1_KITE:{need:['T1_GLASS','R1_DOLL'],why:'断骨上的字，得先认出是谁的笔迹。'},
+ R1_BIKE:{need:['T1_RAG','R1_DOLL','T1_GLASS'],why:'后座那块漆，得有个东西放上去才比得出来。'},
+ R2_CONSOLE:{need:['T2_TWEEZER','T2_TORCH'],why:'卡槽太深，得先照亮。'},
+ R2_TAPE:{need:['T2_PENCIL','R2_CONSOLE'],why:'倒回去的那一段，和断卡一样，都是被按回原处的。'},
+ R2_BALL:{need:['T2_TORCH','T2_PENCIL','R2_TAPE'],env:'dim',why:'只有一面磨平，要沿着球面走一圈。'},
+ R2_LETTER:{need:['T2_BOOK','T2_TWEEZER','T2_TORCH'],why:'纸折得展不开，折角里还有东西。'},
+ R3_PHOTO:{need:['T3_TAPE','T3_CLOTH','R3_INVITE'],why:'拼回去之后，还得认出背面是谁的字。'},
+ R3_LIGHTER:{need:['T3_BRUSH','R2_LETTER'],why:'灰是什么纸烧的，得拿同一叠纸来比。'},
+ R3_INVITE:{need:['T3_ERASER','T3_CLOTH'],env:'dim',why:'灰底下是印上去的字，得斜着光。'},
+ R3_RING:{need:['T3_CLOTH','R3_PHOTO'],why:'内圈亮不亮，要和照片里那只手对一下。'},
+ R4_PACIFIER:{need:['T4_PACI_NEW','T4_RULER','R1_DOLL'],why:'新旧两个摆一起，才量得出被攥掉的那一点。'},
+ R4_TIE:{need:['T4_MIRROR','R3_RING'],why:'系领带的手上，还有一样一直没摘的东西。'},
+ R4_CARD:{need:['T4_RULER','T4_MIRROR','R2_LETTER'],env:'dim',why:'折角压住的那行字太浅。'}
+};
+var ENV_SAY={1:'窗帘拉上了，屋里暗下来。得借着光才看得清。',2:'百叶窗合上了。屋里暗下来。',
+ 3:'灯罩被拨低了。屋里暗下来。',4:'灯罩被拨低了。屋里暗下来。'};
+/* 每件物证讲的是什么，用于「属于别组」的分类反馈；只给母题，不给名单 */
+var MOTIF={
+ R1_DOLL:'小时候没人回话',R1_KITE:'小时候没人回话',R1_BIKE:'小时候没人回话',R1_COMIC:'小时候没人回话',
+ R2_CONSOLE:'想靠近别人又停下',R2_TAPE:'想靠近别人又停下',R2_BALL:'想靠近别人又停下',
+ R2_LETTER:'那封信没寄出去',R3_INVITE:'那封信后来去哪了',R3_LIGHTER:'那封信后来去哪了',R3_PHOTO:'有人陪他走过来',
+ R4_PACIFIER:'家里在等他回一句话',R4_TIE:'家里在等他回一句话',R4_CARD:'家里在等他回一句话'
+};
+var NONMEMBER={
+ R3_RING:'它只是他一直戴着的东西。',
+ R4_FAMILY:'它只是那张一直没挂回去的照片。'
+};
+/* v6：只给提问句 + 母题提示（主动索取才给），不给年代词与成员名单；G4 三槽，全家福锁死移出 */
+var GROUPS=[
+ {q:'他小时候说话，谁在听？',tip:'这四样都放在他够得着的地方。',ids:['R1_DOLL','R1_KITE','R1_BIKE','R1_COMIC'],
+  text:['四样东西挨着放在床底下，摆得很齐。','他隔几天就换一次顺序，像在轮流点名。','没有一样会答话，他还是每天都说一遍。']},
+ {q:'他有几回走到别人面前，又停下了？',tip:'每一回，东西都没到该到的人手上。',ids:['R2_CONSOLE','R2_TAPE','R2_BALL','R2_LETTER'],
+  text:['那四回，他都在门口站过一会儿才走。','只有一回把东西递了出去，回来时手上空着。','后来他学会了先别走过去。']},
+ {q:'那封信最后到了谁手里？',tip:'有一件不在这间房里。',ids:['R2_LETTER','R3_INVITE','R3_LIGHTER','R3_PHOTO'],
+  text:['烧完那天，窗开了一整夜。','灰没倒，装回原来那只抽屉。','后来妻子问过一次，要不要清掉。他说先放着。']},
+ {q:'家里一直在等他回一句话。',tip:'这三件，都不是他说的话。',ids:['R4_PACIFIER','R4_TIE','R4_CARD'],
+  text:['领带洗过很多次，折痕还在原来那个位置。','奶嘴换过一个新的，旧的没扔。','女儿那张卡片一直夹在包里，边角更软了。']}
+];
+var SIDE=[
+ {id:'S1',name:'那封信后来去哪了',gi:2,when:function(){return !!S.l2.R2_LETTER;}},
+ {id:'S2',name:'他为什么没能早点回来',gi:3,when:function(){return !!(S.l2.R4_TIE&&S.l2.R4_CARD);}}
+];
+var HINT=['再看看这一处。','你手上的东西，和这一件是一对。','把它拖过去。'];
+var SUM=[
+ '没人听我说话，我就跟它说。','写上去的苦恼，一次也没飞走。','后来陪我的是车，不是人。','同一页，翻了整个童年。',
+ '拿它换一句「一起玩」，没换成。','连喜欢什么，都得躲着听。','一直对着墙踢，后来球也没了。','字改了又改，收件人一直空着。',
+ '她嫁的人，是我朋友。','戒了烟，却用它烧了一封信。','是她陪我走过来。','戴上那天起，我就没摘过。'
+];
+var PAPER_LINES=['相框后面滑出一张纸，折了四折。','那天上午，医生说话很慢。','他说，已经很严重了。','下午我们去了湖边。三个人都在笑。我谁也没告诉。'];
+
+/* 剧情配乐：四房各一段舒缓轻音乐；四件看清、门谜题待解时退到最安静；终局独白换夜曲 */
+var BGM_ROOM=['r1','r2','r3','r4'];
+var MUSIC_NAME={r1:'舒缓钢琴 · 吉诺佩蒂 第 1 号',r2:'无旋律氛围 · CK61',
+ r3:'极静氛围 · Resolution',r4:'暗色钢琴 · 吉诺佩蒂 第 3 号',
+ finale:'夜曲 · 肖邦 Op.27 No.1'};
+function musicKey(){
+ if(S.phase==='finale'||S.phase==='ending'||S.phase==='dark')return 'finale';
+ if(S.phase!=='play')return 'r1';
+ if(allL2()&&!puzzleDone())return 'r3';
+ return BGM_ROOM[S.room];
+}
+function refreshMusic(){Sound.bgm(musicKey());}
+
+/* ======================= 音频（CC0 配乐 + 程序化音床兜底） ======================= */
+var AUDIO_FILES={
+ bgm:{r1:'assets/audio/gymnopedie-no1.mp3',r2:'assets/audio/ck61-ambient.mp3',
+      r3:'assets/audio/resolution.mp3',r4:'assets/audio/gymnopedie-no3.mp3',
+      finale:'assets/audio/nocturne-finale.mp3'},
+ siren:null,crash:null,whisper:null
+};
+var Sound={
+ ctx:null,master:null,pad:[],padGain:null,noiseGain:null,enabled:true,room:-1,timer:null,
+ bgmKey:null,bgmWant:null,bgmEls:{},bgmVol:.12,fadeTimer:null,bgmPending:null,fadeAll:null,
+ init:function(){
+  if(this.ctx)return;var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  this.ctx=new AC();this.master=this.ctx.createGain();this.master.gain.value=.18;this.master.connect(this.ctx.destination);
+  var len=this.ctx.sampleRate*2,b=this.ctx.createBuffer(1,len,this.ctx.sampleRate),d=b.getChannelData(0);
+  for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*.35;
+  var s=this.ctx.createBufferSource();s.buffer=b;s.loop=true;
+  var lp=this.ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=420;
+  this.noiseGain=this.ctx.createGain();this.noiseGain.gain.value=.04;
+  s.connect(lp);lp.connect(this.noiseGain);this.noiseGain.connect(this.master);s.start();
+  this.padGain=this.ctx.createGain();this.padGain.gain.value=0;this.padGain.connect(this.master);
+ },
+ /* 手机浏览器要求音频在用户手势里解锁：开场那一下点击里先静音启播一次 */
+ unlock:function(){
+  if(this.unlocked)return;this.unlocked=true;
+  if(this.ctx&&this.ctx.state==='suspended'&&this.ctx.resume)this.ctx.resume();
+  var f=(AUDIO_FILES.bgm||{}).r1;if(!f)return;
+  var a=this.bgmEls.r1;
+  if(!a){a=new Audio(f);a.loop=true;a.preload='auto';this.bgmEls.r1=a;}
+  a.muted=true;a.volume=0;
+  var done=function(){try{a.pause();a.currentTime=0;}catch(e){}a.muted=false;};
+  var pr=a.play();
+  if(pr&&pr.then)pr.then(done).catch(function(){a.muted=false;});
+  else done();
+  setTimeout(function(){a.muted=false;},1200);
+ },
+ tone:function(f,t,dur,vol,delay){if(!this.ctx)return;var T=this.ctx.currentTime+(delay||0),o=this.ctx.createOscillator(),g=this.ctx.createGain();
+  o.type=t||'sine';o.frequency.value=f;g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(vol||.1,T+.06);
+  g.gain.exponentialRampToValueAtTime(.0001,T+dur);o.connect(g);g.connect(this.master);o.start(T);o.stop(T+dur+.05);},
+ crash:function(){if(!this.ctx)return;if(AUDIO_FILES.crash){new Audio(AUDIO_FILES.crash).play().catch(function(){});}
+  this.tone(58,'sine',.9,.5,0);this.tone(92,'triangle',.5,.25,0);this.tone(1800,'sawtooth',.18,.06,.02);},
+ tinnitus:function(){this.tone(3200,'sine',2.4,.055,0);this.tone(3240,'sine',2.2,.035,0);},
+ heartbeat:function(){this.tone(64,'sine',.24,.32,0);this.tone(58,'sine',.26,.26,.42);this.tone(60,'sine',.22,.2,1.5);},
+ siren:function(sec){if(!this.ctx)return;if(AUDIO_FILES.siren){var a=new Audio(AUDIO_FILES.siren);a.volume=.22;a.loop=true;a.play().catch(function(){});var self=this;setTimeout(function(){a.pause();},sec*1000);return;}
+  var n=Math.floor(sec/.72);for(var i=0;i<n;i++){var o=this.ctx.createOscillator(),g=this.ctx.createGain(),T=this.ctx.currentTime+i*.72;
+   o.type='sine';o.frequency.setValueAtTime(i%2?820:650,T);var v=.025+.075*(i/n);
+   g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(v,T+.12);g.gain.linearRampToValueAtTime(0,T+.7);
+   o.connect(g);g.connect(this.master);o.start(T);o.stop(T+.72);}},
+ whisper:function(text){if(!this.enabled)return;if(AUDIO_FILES.whisper){var a=new Audio(AUDIO_FILES.whisper);a.volume=.22;a.play().catch(function(){});return;}
+  try{if(!window.speechSynthesis)return;var u=new SpeechSynthesisUtterance(text);u.lang='zh-CN';u.rate=.72;u.pitch=1.08;u.volume=.24;window.speechSynthesis.speak(u);}catch(e){}},
+ /* 交叉淡入淡出切换配乐；没有文件时自动回落到程序化和弦 */
+ bgm:function(key){
+  if(!key||!this.enabled)return;
+  this.bgmWant=key;
+  if(this.bgmKey===key)return;
+  var files=AUDIO_FILES.bgm||{},a=this.bgmEls[key],self=this;
+  if(!a){
+   if(!files[key]){this.bgmKey=key;return;}
+   a=new Audio(files[key]);a.loop=true;a.preload='auto';this.bgmEls[key]=a;
+  }
+  var old=this.bgmKey?this.bgmEls[this.bgmKey]:null;
+  Object.keys(this.bgmEls).forEach(function(x){
+   if(self.bgmEls[x]!==a&&self.bgmEls[x]!==old)self.bgmEls[x].pause();
+  });
+  this.bgmKey=key;clearInterval(this.fadeAll);clearInterval(this.fadeTimer);
+  a.volume=0;
+  var pr=a.play();
+  if(pr&&pr.catch)pr.catch(function(){self.bgmPending=key;self.bgmKey=null;});
+  var t0=Date.now(),D=1500;
+  this.fadeTimer=setInterval(function(){
+   var k=Math.min(1,(Date.now()-t0)/D);
+   try{a.volume=self.bgmVol*k;if(old&&old!==a)old.volume=self.bgmVol*(1-k);}catch(e){}
+   if(k>=1){clearInterval(self.fadeTimer);if(old&&old!==a){old.pause();try{old.currentTime=0;}catch(e){}}}
+  },40);
+ },
+ fadeOutBgm:function(){
+  var self=this,els=this.bgmEls,t0=Date.now(),D=2600;
+  clearInterval(this.fadeTimer);clearInterval(this.fadeAll);
+  this.fadeAll=setInterval(function(){
+   var k=Math.min(1,(Date.now()-t0)/D);
+   Object.keys(els).forEach(function(x){try{els[x].volume=self.bgmVol*(1-k);}catch(e){}});
+   if(k>=1){clearInterval(self.fadeAll);Object.keys(els).forEach(function(x){els[x].pause();});}
+  },50);
+ },
+ retryPending:function(){
+  if(!this.bgmPending||!this.enabled)return;
+  var k=this.bgmPending;this.bgmPending=null;this.bgmKey=null;this.bgm(k);
+ },
+ setRoom:function(n){this.init();if(!this.ctx)return;this.room=n;
+  if(AUDIO_FILES.bgm&&AUDIO_FILES.bgm[musicKey()]){this.bgm(musicKey());}
+  else{
+   var ch=ROOMS[n].chord,i;for(i=0;i<this.pad.length;i++){try{this.pad[i].stop();}catch(e){}}this.pad=[];
+   for(i=0;i<ch.length;i++){var o=this.ctx.createOscillator();o.type=i===0?'sine':'triangle';o.frequency.value=ch[i];
+    var g=this.ctx.createGain();g.gain.value=[.5,.22,.14][i];o.connect(g);g.connect(this.padGain);o.start();this.pad.push(o);}
+   this.padGain.gain.cancelScheduledValues(this.ctx.currentTime);this.padGain.gain.setValueAtTime(.0001,this.ctx.currentTime);
+   this.padGain.gain.linearRampToValueAtTime(.16,this.ctx.currentTime+2.2);
+  }
+  this.schedule();},
+ schedule:function(){var self=this;clearTimeout(this.timer);this.timer=setTimeout(function(){
+   if(self.enabled&&self.room>=0){var w=['……醒醒','爸爸','我们都在呢','别着急','回来吧'];self.whisper(w[Math.floor(Math.random()*w.length)]);}
+   self.schedule();},26000+Math.random()*16000);},
+ setEnabled:function(on){this.enabled=on;if(this.master)this.master.gain.value=on?.18:0;
+  var self=this;
+  if(!on){Object.keys(this.bgmEls).forEach(function(k){self.bgmEls[k].pause();});this.bgmKey=null;
+   if(window.speechSynthesis)window.speechSynthesis.cancel();}
+  else if(this.bgmWant){this.bgmKey=null;this.bgm(this.bgmWant);}}
+};
+/* 浏览器若拦截自动播放，在下一次点击时补播 */
+document.addEventListener('click',function(){Sound.retryPending();},true);
+
+/* ======================= 状态 ======================= */
+var S={phase:'intro',room:0,found:{},l2:{},clues:[],roomClues:[],toolFound:[],opened:{},dim:false,
+ placed:{},doorDone:false,lock4:false,hung:false,selected:null,reader:null,drag:null,
+ mainOrder:[],ident:{},hintCursor:0,
+ hintLevel:0,wrong:0,evidence:{},solved:{},eviFocus:null,eviTip:{},sound:true,taskMain:false,
+ suppressClick:false};
+function el(id){return document.getElementById(id);}
+function cur(){return ROOMS[S.room];}
+function holdsOf(room){return HOLDS[room+1];}
+window.__DEBUG=function(){return {phase:S.phase,room:S.room+1,found:Object.keys(S.found),
+ l2:Object.keys(S.l2),clues:S.clues.slice(),roomClues:S.roomClues.slice(),toolFound:S.toolFound.slice(),
+ mainOrder:S.mainOrder.slice(),ident:JSON.parse(JSON.stringify(S.ident)),dim:S.dim,bgmKey:Sound.bgmKey,
+ eviFilled:(function(){var n=0;Object.keys(S.evidence).forEach(function(g){n+=S.evidence[g].filter(Boolean).length;});return n;})(),
+ opened:Object.keys(S.opened),dim:S.dim,
+ placed:S.placed,doorDone:S.doorDone,lock4:S.lock4,hung:S.hung,
+ hintLevel:S.hintLevel,wrong:S.wrong,solved:Object.keys(S.solved),eviFocus:S.eviFocus,
+ evidence:(function(){var o={};Object.keys(S.evidence).forEach(function(g){o[g]=S.evidence[g].filter(Boolean);});return o;})(),sound:S.sound};};
+
+/* ======================= 解锁规则 ======================= */
+/* v7：一间房里的四件主道具可以任意顺序找到；只有最后那张全家福要等锁开 */
+function mainUnlock(id){
+ if(id==='R4_FAMILY')return !!S.lock4;
+ return true;
+}
+/* 底图与遮挡块必须共用同一滤镜，否则第四间房的低饱和会让遮挡块整块跳出来 */
+function sceneFilter(){
+ var f='saturate('+cur().sat+'%) brightness('+(S.dim?.58:.92)+')';
+ el('sceneBg').style.filter=f;el('covers').style.filter=f;
+}
+function identDone(mid){return (S.ident[mid]||[]).length;}
+function identNeed(mid){return IDENT[mid]?IDENT[mid].need.length:0;}
+function identMissing(mid){
+ var d=S.ident[mid]||[],n=IDENT[mid]?IDENT[mid].need:[];
+ return n.filter(function(x){return d.indexOf(x)<0;});
+}
+function coverUnlock(c){return c.kind==='main'?mainUnlock(c.holds):true;}
+function allL2(){
+ var ch=CHAIN[S.room+1];
+ if(S.room===3)return !!S.l2.R4_PACIFIER&&!!S.l2.R4_TIE&&!!S.l2.R4_CARD;
+ return ch.every(function(k){return !!S.l2[k];});
+}
+function puzzleDone(){var p=PUZZLE[S.room+1];return p.slots.every(function(s){return !!S.placed[s.id];});}
+
+/* ======================= 渲染 ======================= */
+function log(t,dim){var p=document.createElement('p');if(dim)p.className='dim';p.textContent=t;
+ el('log').appendChild(p);var max=IS_TOUCH?3:4;
+ while(el('log').children.length>max)el('log').removeChild(el('log').firstChild);}
+function shake(n){if(!n)return;S.wrong++;n.classList.remove('shake');void n.offsetWidth;n.classList.add('shake');setTimeout(function(){n.classList.remove('shake');},280);}
+function rectCss(r){return 'left:'+r[0]+'%;top:'+r[1]+'%;width:'+(r[2]-r[0])+'%;height:'+(r[3]-r[1])+'%';}
+function itemImg(id){var o=MAIN[id]||TOOL[id];return o?o.img:'';}
+function itemName(id){var o=MAIN[id]||TOOL[id];return o?o.name:CLUE[id]||'';}
+
+function buildScene(){
+ var R=cur();
+ el('sceneBg').src=R.bg;
+ el('scene').classList.toggle('blend',S.room===3);
+ sceneFilter();
+ el('roomTag').innerHTML=R.name+'<small>'+R.sub+'</small>';
+ el('log').innerHTML='';
+ var ch='',kh='';
+ holdsOf(S.room).forEach(function(c){
+  var r=rectCss(c.rect);
+  if(c.kind==='env'){
+   ch+='<div class="cover'+(S.dim?' tugged':'')+'" data-open="'+c.id+'" style="'+r+'" draggable="true"><img src="assets/covers/'+c.id+'.png" alt=""><i class="hit"></i></div>';
+   return;
+  }
+  var got=!!S.found[c.holds];
+  kh+='<div class="cache'+(got?' taken':'')+'" style="'+r+'"><div class="cavity"></div>'
+    +'<button class="hiddenItem'+(MAIN[c.holds]&&MAIN[c.holds].paper?' paper':'')+(S.opened[c.id]&&!got?' visible':'')+(got?' picked':'')+'" data-take="'+c.holds+'" style="'+'"><img src="'+itemImg(c.holds)+'" alt=""></button></div>';
+  ch+='<div class="cover'+(S.opened[c.id]?' moved':'')+(got?' gone':'')+'" data-open="'+c.id+'" style="'+r+'" draggable="true"><img src="assets/covers/'+c.id+'.png" alt=""><i class="hit"></i></div>';
+ });
+ if(S.room===3){
+  var w=rectCss(WALLMARK.rect);
+  kh+='<div class="hangTarget'+(S.found.R4_FAMILY&&!S.hung?' armed':'')+'" data-hang="1" style="'+w+'"></div>';
+ }
+ el('caches').innerHTML=kh;el('covers').innerHTML=ch;
+ updateSlots();renderPanel();
+}
+function updateSlots(){
+ var h='';
+ if(allL2()&&!(S.room<=2&&S.doorDone)&&!(S.room===3&&S.lock4)){
+  var p=PUZZLE[S.room+1];
+  p.slots.forEach(function(s){
+   var v=S.placed[s.id];
+   var ph=v?'':(p.accept==='clue'?'线索卡':'主道具');
+   h+='<div class="pslot'+(v?' filled':'')+'" data-slot="'+s.id+'" style="left:'+s.x+'%;top:'+s.y+'%">'
+     +'<span class="sn">'+s.label+'</span><span class="sv'+(ph?' empty-hint':'')+'">'+(v?itemName(v):ph)+'</span></div>';
+  });
+ }
+ el('slots').innerHTML=h;
+ el('doorSpot').hidden=!(S.room<=2&&allL2()&&puzzleDone());
+}
+function cellHtml(id,isMain){
+ var got=!!S.found[id];
+ if(!got)return '<div class="cell empty" data-cell="'+id+'"></div>';
+ var o=isMain?MAIN[id]:TOOL[id],done=isMain&&S.l2[id]?' done':'',sel=S.selected===id?' sel':'';
+ return '<div class="cell'+done+sel+'" data-cell="'+id+'" draggable="true" title="'+o.name+'">'
+   +'<img src="'+o.img+'" alt=""><span class="nm">'+o.name+'</span></div>';
+}
+function renderPanel(){
+ /* v7：主道具仓跨房累积，但严格按「玩家找到的先后」排列，不再泄露主线固定顺序 */
+ var collected=S.mainOrder.filter(function(k){return !!S.found[k];});
+ el('invMain').innerHTML=collected.map(function(k){return cellHtml(k,true);}).join('');
+ var tf=S.toolFound.slice(),blank='<div class="cell empty"></div>';
+ for(var q=tf.length;q<TOOL_ORDER[S.room+1].length;q++)tf.push(null);
+ el('invTools').innerHTML=tf.map(function(x){return x?cellHtml(x,false):blank;}).join('');
+ var r=el('reader'),o;
+ if(!S.reader){r.innerHTML='<span class="unread">'+(IS_TOUCH
+   ?'点物品仓里的东西可以看。点一下选中，再点另一件凑上去，才看得清背面那层。'
+   :'点物品仓里的东西可以看。把两样、三样东西拖到一起，才看得清背面那层。')+'</span>';}
+ else{
+  o=MAIN[S.reader]||TOOL[S.reader];
+  if(o){
+   var mid=S.reader,isMain=!!MAIN[mid],extra='';
+   if(isMain&&!S.l2[mid]){
+    if(mid==='R4_FAMILY')extra='<div class="unread">这张照片要挂回墙上，才看得清。</div>';
+    else{
+     var dn=identDone(mid),nn=identNeed(mid),used=(S.ident[mid]||[]).map(itemName).join('、');
+     extra='<div class="unread">组合鉴定 '+dn+'/'+nn+'：'+(used||'还没开始')
+       +'。还差 '+(nn-dn)+' 样，'+(IS_TOUCH?'点能对照的东西凑上去。':'把能对照的东西拖到它上面。')
+       +(IDENT[mid].env==='dim'?(S.dim?'　·　光已经调暗了。':'　·　屋里太亮了，先把挡光的东西拉上。'):'')+'</div>';
+    }
+   }
+   r.innerHTML='<div class="rt">'+o.name+'</div><div>'+(isMain?o.l1:o.pick)+'</div>'
+    +(isMain&&S.l2[mid]?'<div class="r2">'+o.l2+'</div>':'')+extra;
+  }else r.innerHTML='<span class="unread">'+(IS_TOUCH?'点一下选中，再点目标放下。':'点物品仓里的东西可以看。')+'</span>';
+ }
+ /* 任务线索板 */
+ var b='';
+ if(!S.roomClues.length)b+='<div id="boardEmpty">这间房里还有没看清的东西。</div>';
+ else b+='<div id="boardEmpty">这间房看清一点，就多一行。</div>';
+ /* 线索卡按房间分组、本房高亮；组内按发现先后排，不再按固定清单顺序排 */
+ var RN=['一','二','三','四'],rows='';
+ for(var rn=1;rn<=4;rn++){
+  var cards=[];
+  S.clues.forEach(function(c){
+   if(cards.indexOf(c)>=0)return;
+   if(CHAIN[rn].some(function(k){return MAIN[k].clue===c;}))cards.push(c);
+  });
+  if(!cards.length)continue;
+  rows+='<div class="clueGroup'+(rn===S.room+1?' now':'')+'"><span class="ch">'+RN[rn-1]+'房</span><span class="cgs">'
+    +cards.map(function(c){return '<span class="chip'+(S.selected===c?' sel':'')+'" data-card="'+c+'" draggable="true">'+CLUE[c]+'</span>';}).join('')+'</span></div>';
+ }
+ b+='<div id="clueRow">'+rows+'</div>';
+ b+='<div class="readonly">本房线索 · 只读</div>';
+ var qs='';for(var i=0;i<4;i++)qs+='<div class="qslot'+(i<S.roomClues.length?' on':'')+'">'+(i<S.roomClues.length?CLUE[S.roomClues[i]]:'·')+'</div>';
+ b+='<div class="qslots">'+qs+'</div>';
+ if(allL2()||S.taskMain){
+  S.taskMain=true;
+  var done=S.room<=2?S.doorDone:S.hung;
+  var step=(S.roomClues.length>0?1:0)+(allL2()?1:0)+(done?1:0);
+  b+='<div class="task'+(done?' done':'')+'"><div class="kind">主线 · '+cur().name+'</div>'+cur().main
+    +'<div class="goal">'+cur().goal+'</div><div class="steps">'
+    +[0,1,2].map(function(i){return '<i class="'+(i<step?'on':'')+'"></i>';}).join('')+'</div></div>';
+  if(allL2()&&!done)b+='<div class="task"><div class="kind">门 · '+cur().door+'</div>'+cur().dtip+'</div>';
+ }
+ SIDE.forEach(function(t){
+  if(!t.when())return;
+  var sol=!!S.solved[t.gi],arr=S.evidence[t.gi]||[],n=arr.filter(Boolean).length,N=GROUPS[t.gi].ids.length;
+  b+='<div class="task side'+(sol?' done':'')+'"><div class="kind">支线'+(sol?' · 已完成':' · '+n+'/'+N)+'</div>'+t.name
+    +'<div class="goal">'+(sol?'证据板里这一组对上了。':GROUPS[t.gi].q)+'</div></div>';
+ });
+ el('board').innerHTML=b;
+ /* 证据板：整组卡片都是投放目标，避免长面板里精确拖小格子 */
+ var eh='<div class="eviHelp">'+(IS_TOUCH
+  ?'点物品仓里的一件选中，再点下面任意一组放进去，整块都能点。'
+  :'把物品仓里找回来的东西拖进任意一组，整块都能放。')
+  +'放错会退回，并告诉你为什么。最后一组只有三格，不是漏印。</div>';
+ GROUPS.forEach(function(g,gi){
+  var sol=!!S.solved[gi],arr=S.evidence[gi]||[],n=arr.filter(Boolean).length;
+  eh+='<div class="eviGroup'+(sol?' solved':'')+(S.eviFocus===gi?' focus':'')+'" data-evi-drop="'+gi+'">'
+    +'<div class="eh" data-evi-head="'+gi+'"><span class="ask">'+g.q+'</span>'
+    +'<span class="cnt">'+n+'/'+g.ids.length+'</span>'
+    +'<button class="mini" data-evi-tip="'+gi+'" type="button">提示</button></div><div class="eviSlots">';
+  for(var k=0;k<g.ids.length;k++){
+   var v=arr[k];
+   eh+='<div class="eviSlot'+(v?' filled':'')+'" data-evi="'+gi+'_'+k+'">'+(v?MAIN[v].name:'+')+'</div>';
+  }
+  eh+='</div>'
+    +(S.eviTip[gi]?'<div class="tip">'+g.tip+'</div>':'')
+    +(sol?'<div class="br">'+g.text.join('<br>')+'<br><span class="cnt">这一组对上了。</span></div>':'')
+    +'</div>';
+ });
+ el('evidence').innerHTML=eh;
+ var sel=S.selected||S.reader,combo=sel&&MAIN[sel]&&IDENT[sel]&&!S.l2[sel],tip='';
+ if(combo){
+  var miss=identMissing(sel),needDark=IDENT[sel].env==='dim'&&!S.dim;
+  tip='组合鉴定 '+identDone(sel)+'/'+identNeed(sel)+'：还差 '+miss.length+' 样。'
+    +(needDark?'屋里太亮，先拉上挡光的东西。':'点「要一条提示」可以点名一样。');
+ }
+ else if(S.eviFocus!==null&&GROUPS[S.eviFocus]&&!S.eviTip[S.eviFocus])
+  tip='先想清楚这一组在问什么。';
+ else tip=S.hintLevel?HINT[S.hintLevel-1]:'';
+ el('hintBox').textContent=(IS_TOUCH&&S.selected?'已选中「'+itemName(S.selected)+'」→ 点目标放下。　':'')+tip;
+ el('btnAudio').textContent='声音：'+(S.sound?'开':'关');
+ el('musicTag').textContent='配乐：'+(S.sound?(MUSIC_NAME[Sound.bgmKey||musicKey()]||'—'):'已关闭');
+ syncBar();
+ if(S.phase==='play')refreshMusic();
+}
+/* ---------- 右侧面板自绘滚动条：轨道常显、滑块可拖、与 panel.scrollTop 双向同步 ---------- */
+function syncBar(){
+ var p=el('panel'),bar=el('panelBar'),th=el('panelThumb');
+ if(!p||!bar||!th)return;
+ var vh=p.clientHeight,sh=p.scrollHeight;
+ var h=Math.max(48,Math.round(vh*Math.min(1,vh/sh)));
+ var maxTop=Math.max(0,vh-h),maxScroll=Math.max(0,sh-vh);
+ th.style.height=h+'px';
+ th.style.top=Math.round(maxScroll>0?(p.scrollTop/maxScroll)*maxTop:0)+'px';
+ th.style.opacity=maxScroll>4?'1':'.28';
+}
+el('panel').addEventListener('scroll',syncBar);
+window.addEventListener('resize',syncBar);
+(function(){
+ var p=el('panel'),bar=el('panelBar'),th=el('panelThumb'),dragging=false,sy=0,ss=0;
+ bar.addEventListener('pointerdown',function(e){
+  var r=bar.getBoundingClientRect(),h=th.getBoundingClientRect().height;
+  var maxScroll=p.scrollHeight-p.clientHeight,maxTop=Math.max(1,r.height-h);
+  if(e.target===th){dragging=true;sy=e.clientY;ss=p.scrollTop;th.classList.add('grabbing');
+   try{th.setPointerCapture(e.pointerId);}catch(err){}}
+  else p.scrollTop=Math.max(0,Math.min(1,(e.clientY-r.top-h/2)/maxTop))*maxScroll;
+  e.preventDefault();
+ });
+ th.addEventListener('pointermove',function(e){
+  if(!dragging)return;
+  var r=bar.getBoundingClientRect(),h=th.getBoundingClientRect().height;
+  var maxScroll=p.scrollHeight-p.clientHeight,maxTop=Math.max(1,r.height-h);
+  p.scrollTop=ss+(e.clientY-sy)/maxTop*maxScroll;syncBar();
+ });
+ function end(){dragging=false;th.classList.remove('grabbing');}
+ th.addEventListener('pointerup',end);th.addEventListener('pointercancel',end);
+})();
+var TOOL_ORDER={1:['T1_BASIN','T1_LAMP','T1_GLASS','T1_RAG'],2:['T2_TWEEZER','T2_PENCIL','T2_TORCH','T2_BOOK'],
+ 3:['T3_TAPE','T3_ERASER','T3_BRUSH','T3_CLOTH'],4:['T4_PACI_NEW','T4_MIRROR','T4_RULER','T4_NAIL']};
+
+/* ======================= 交互 ======================= */
+function openCover(id,node){
+ var c=null;holdsOf(S.room).forEach(function(x){if(x.id===id)c=x;});
+ if(!c)return;
+ if(c.kind==='env'){
+  /* 每间房都有一处「窗帘式」环境操作：拖一下改变光线，某些组合鉴定必须在暗处做 */
+  S.dim=!S.dim;el('scene').classList.toggle('dim',S.dim);
+  node.classList.toggle('tugged',S.dim);
+  sceneFilter();
+  log(S.dim?(ENV_SAY[S.room+1]||'屋里暗下来了。'):'光又进来了。',true);
+  Sound.whisper('……别着急');renderPanel();return;
+ }
+ if(!coverUnlock(c)){log(c.holds==='R4_FAMILY'?'这一处还动不了。锁没开，照片取不下来。':'这一处现在还动不了。',true);shake(node);return;}
+ if(S.opened[id]){if(!S.found[c.holds])log('下面的东西还没拿。',true);return;}
+ S.opened[id]=true;
+ node.classList.add('moved');
+ var btn=el('caches').querySelector('[data-take="'+c.holds+'"]');
+ if(btn){btn.classList.add('visible');log('压在下面的东西露出来了。',true);}
+}
+function takeItem(id,node){
+ var c=null;holdsOf(S.room).forEach(function(x){if(x.holds===id)c=x;});
+ if(!c||!S.opened[c.id]||S.found[id])return;
+ if(!coverUnlock(c)){shake(node);return;}
+ S.found[id]=true;S.reader=id;S.selected=null;
+ if(MAIN[id]&&S.mainOrder.indexOf(id)<0)S.mainOrder.push(id);
+ if(TOOL[id]&&S.toolFound.indexOf(id)<0)S.toolFound.push(id);
+ node.classList.add('picked');
+ var cache=node.closest('.cache');if(cache)cache.classList.add('taken');
+ var cv=el('covers').querySelector('[data-open="'+c.id+'"]');if(cv)cv.classList.add('gone');
+ log(MAIN[id]?MAIN[id].l1:TOOL[id].pick);
+ renderPanel();
+}
+function fail(n){shake(n);return false;}
+/* v7：一件主道具要凑齐 2–3 样（辅助道具 + 已找回的主道具），必要时还得先把光调暗 */
+function identify(src,mid,node){
+ var m=MAIN[mid],rec=IDENT[mid];
+ if(!m||!S.found[mid]||S.l2[mid]||!rec){if(mid==='R4_FAMILY')log('这张照片要挂回墙上，才看得清。',true);return fail(node);}
+ if(!S.found[src]){log('这一样还没找到。',true);return fail(node);}
+ if(rec.need.indexOf(src)<0){
+  log(TOOL[src]?itemName(src)+'和这一件凑不上。':itemName(src)+'摆不到这一件旁边。',true);
+  return fail(node);
+ }
+ if(rec.env==='dim'&&!S.dim){log('屋里太亮了。先把能挡光的东西拉上。',true);return fail(node);}
+ var used=S.ident[mid]||(S.ident[mid]=[]);
+ if(used.indexOf(src)>=0){log('这一样已经用过了。',true);return fail(node);}
+ used.push(src);S.reader=mid;S.selected=null;S.hintCursor=0;
+ if(used.length<rec.need.length){
+  log(itemName(src)+'凑上去了。鉴定 '+used.length+'/'+rec.need.length+'，还差 '+(rec.need.length-used.length)+' 样。',true);
+  Sound.tone(392,'sine',.12,.05,0);renderPanel();return true;
+ }
+ S.l2[mid]=true;S.clues.push(m.clue);S.roomClues.push(m.clue);
+ log('几样东西凑到一起，才看清。',true);
+ var keyTool=null;rec.need.forEach(function(x){if(TOOL[x])keyTool=x;});
+ if(keyTool)log(TOOL[keyTool].result,true);
+ log(m.l2);
+ Sound.tone(523.25,'sine',.2,.08,0);Sound.tone(659.25,'sine',.26,.06,.14);
+ renderPanel();updateSlots();return true;
+}
+function putSlot(src,sid,node){
+ var p=PUZZLE[S.room+1];
+ if(!allL2()){log('先把这间房的东西都看清。',true);return fail(node);}
+ if(S.placed[sid]){log('这个槽已经放过了。',true);return fail(node);}
+ if(TOOL[src]){log('工具不放进这里。',true);return fail(node);}
+ if(p.accept==='main'&&!MAIN[src]){log('这一间要放的是主道具，不是线索卡。',true);return fail(node);}
+ if(p.accept==='clue'&&S.clues.indexOf(src)<0){log('这一间要放的是线索卡，不是道具。',true);return fail(node);}
+ if(p.answer[sid]!==src){log('这张卡不该放在这里。再看看顺序。',true);return fail(node);}
+ S.placed[sid]=src;S.selected=null;
+ if(puzzleDone()){
+  if(S.room<=2){S.doorDone=true;log('四样东西都回到了原来的位置。');}
+  else{S.lock4=true;log('锁开了。');}
+ }
+ renderPanel();updateSlots();return true;
+}
+function putEvidence(src,gi,k,node){
+ var g=GROUPS[gi];if(!g)return fail(node);
+ var arr=S.evidence[gi]||(S.evidence[gi]=[]);
+ if(S.solved[gi]){log('这一组已经齐了。点开还能再看一遍。',true);return fail(node);}
+ if(!MAIN[src]||!S.found[src]){log('这里只放找回来的东西，工具不算。',true);return fail(node);}
+ if(arr.indexOf(src)>=0){log('这件已经放过了。',true);return fail(node);}
+ if(k>=g.ids.length){log('这一组只要'+g.ids.length+'件。',true);return fail(node);}
+ if(g.ids.indexOf(src)<0){
+  var other=GROUPS.some(function(x){return x!==g&&x.ids.indexOf(src)>=0;});
+  if(other)log('这件说的是「'+MOTIF[src]+'」，不是这一组。',true);
+  else log('这件和这四组都对不上。'+(NONMEMBER[src]||'它不是这里的。'),true);
+  return fail(node);
+ }
+ if(arr[k]){var free=-1;for(var i=0;i<g.ids.length;i++)if(!arr[i]){free=i;break;}
+  if(free<0){log('这一组已经齐了。点开还能再看一遍。',true);return fail(node);}k=free;}
+ arr[k]=src;S.eviFocus=gi;S.selected=null;
+ if(g.ids.every(function(id){return arr.indexOf(id)>=0;})){
+  S.solved[gi]=true;log('这一组对上了。',true);
+  Sound.tone(523.25,'sine',.18,.09,0);Sound.tone(659.25,'sine',.22,.07,.13);
+  log(g.text[0]);
+ }else log('归档了一件。这件讲的是「'+MOTIF[src]+'」。',true);
+ renderPanel();return true;
+}
+function hangPhoto(src,node){
+ if(src!=='R4_FAMILY'||!S.found.R4_FAMILY||S.hung)return fail(node);
+ S.hung=true;S.selected=null;
+ S.l2.R4_FAMILY=true;S.clues.push('C4_THATDAY');S.roomClues.push('C4_THATDAY');S.reader='R4_FAMILY';
+ log(TOOL.T4_NAIL.result);log(MAIN.R4_FAMILY.l2);
+ renderPanel();startFinale();return true;
+}
+function apply(src,target){
+ if(!src||!target)return false;
+ if(target.dataset.cell!==undefined)return identify(src,target.dataset.cell,target);
+ if(target.dataset.slot)return putSlot(src,target.dataset.slot,target);
+ if(target.dataset.eviDrop!==undefined){
+  var g=parseInt(target.dataset.eviDrop,10),arr=S.evidence[g]||[],free=0;
+  while(free<GROUPS[g].ids.length&&arr[free])free++;
+  return putEvidence(src,g,free,target);
+ }
+ if(target.dataset.evi){var q=target.dataset.evi.split('_');return putEvidence(src,parseInt(q[0],10),parseInt(q[1],10),target);}
+ if(target.dataset.hang)return hangPhoto(src,target);
+ return false;
+}
+function onSelect(id,node){
+ if(id.indexOf('C')===0&&CLUE[id]){S.selected=(S.selected===id?null:id);renderPanel();return;}
+ if(!S.found[id])return;
+ if(S.selected&&S.selected!==id){
+  var ok=apply(S.selected,node);
+  if(!ok){S.selected=id;S.reader=id;renderPanel();return;}
+  S.selected=null;renderPanel();return;
+ }
+ S.selected=(S.selected===id?null:id);S.reader=id;renderPanel();
+}
+
+document.addEventListener('click',function(e){
+ if(S.phase!=='play')return;
+ var t=e.target;
+ var jump=t.closest('[data-jump]');
+ if(jump){var jt=el(jump.dataset.jump);if(jt)jt.scrollIntoView({block:'start',behavior:'smooth'});renderPanel();return;}
+ var tip=t.closest('[data-evi-tip]');
+ if(tip){var tg=parseInt(tip.dataset.eviTip,10);S.eviFocus=tg;S.eviTip[tg]=true;log('这一组的一句话：'+GROUPS[tg].tip,true);renderPanel();return;}
+ var head=t.closest('[data-evi-head]');
+ if(head){S.eviFocus=parseInt(head.dataset.eviHead,10);renderPanel();return;}
+ var cell=t.closest('[data-cell]');if(cell){onSelect(cell.dataset.cell,cell);return;}
+ var card=t.closest('[data-card]');if(card){onSelect(card.dataset.card,card);return;}
+ var slot=t.closest('[data-slot]');if(slot){if(S.selected){apply(S.selected,slot);S.selected=null;renderPanel();}return;}
+ var evi=t.closest('[data-evi]');if(evi){if(S.selected){apply(S.selected,evi);S.selected=null;renderPanel();}return;}
+ var group=t.closest('[data-evi-drop]');
+ if(group){if(S.selected){apply(S.selected,group);S.selected=null;renderPanel();}else{S.eviFocus=parseInt(group.dataset.eviDrop,10);renderPanel();}return;}
+ var hang=t.closest('[data-hang]');
+ if(hang){
+  if(S.selected){apply(S.selected,hang);S.selected=null;renderPanel();return;}
+  if(!S.found.T4_NAIL){S.found.T4_NAIL=true;if(S.toolFound.indexOf('T4_NAIL')<0)S.toolFound.push('T4_NAIL');S.reader='T4_NAIL';log(TOOL.T4_NAIL.pick);renderPanel();}
+  return;
+ }
+ var cv=t.closest('[data-open]');if(cv){openCover(cv.dataset.open,cv);return;}
+ var take=t.closest('[data-take]');if(take){takeItem(take.dataset.take,take);return;}
+ var door=t.closest('#doorSpot');
+ if(door&&!door.hidden&&S.room<=2){nextRoom();return;}
+});
+document.addEventListener('dragstart',function(e){
+ var n=e.target.closest?e.target.closest('[data-cell],[data-card],[data-open]'):null;
+ if(!n)return;
+ if(n.dataset.open){S.drag={open:n.dataset.open};}
+ else S.drag={src:n.dataset.cell||n.dataset.card};
+ try{e.dataTransfer.setData('text/plain',JSON.stringify(S.drag));e.dataTransfer.effectAllowed='move';}catch(err){}
+});
+document.addEventListener('dragover',function(e){
+ /* 拖到右侧面板上下边缘时自动滚动，长面板里也能把目标拉进视野 */
+ var p=el('panel');
+ if(S.drag&&S.drag.src&&p){
+  var r=p.getBoundingClientRect();
+  if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
+   if(e.clientY<r.top+58)p.scrollTop-=20;
+   else if(e.clientY>r.bottom-58)p.scrollTop+=20;
+  }
+ }
+ if(S.drag&&S.drag.open){e.preventDefault();return;}
+ var t=e.target.closest?e.target.closest('[data-cell],[data-slot],[data-evi],[data-evi-drop],[data-hang],[data-open]'):null;
+ if(t)e.preventDefault();
+});
+document.addEventListener('drop',function(e){
+ var t=e.target.closest?e.target.closest('[data-cell],[data-slot],[data-evi],[data-evi-drop],[data-hang],[data-open]'):null;
+ var d=S.drag;try{if(!d)d=JSON.parse(e.dataTransfer.getData('text/plain'));}catch(err){}
+ S.drag=null;
+ if(d&&d.open){e.preventDefault();
+  var node=el('covers').querySelector('[data-open="'+d.open+'"]');
+  openCover(d.open,node||t);return;}
+ if(!t)return;e.preventDefault();
+ if(d&&d.src){apply(d.src,t);S.selected=null;renderPanel();}
+});
+document.addEventListener('dragend',function(){S.drag=null;});
+
+/* ---------- 触屏拖放：按住慢移才接管手势，快速滑动仍留给面板滚动 ---------- */
+(function(){
+ if(!IS_TOUCH)return;
+ var T={on:false,drag:false,src:null,open:null,node:null,x0:0,y0:0,t0:0,x:0,y:0,ghost:null,hi:null};
+ function label(src,open){
+  if(open)return '<span>掀开看看</span>';
+  var o=MAIN[src]||TOOL[src];
+  return o?'<img src="'+o.img+'" alt=""><span>'+o.name+'</span>':'<span>'+(CLUE[src]||src)+'</span>';
+ }
+ function hit(x,y){
+  var e=document.elementFromPoint(x,y);
+  return e&&e.closest?e.closest('[data-cell],[data-slot],[data-evi],[data-evi-drop],[data-hang],[data-open]'):null;
+ }
+ function clean(){
+  if(T.ghost&&T.ghost.parentNode)T.ghost.parentNode.removeChild(T.ghost);
+  if(T.node)T.node.style.opacity='';
+  if(T.hi){T.hi.style.outline='';T.hi=null;}
+  T.ghost=null;T.on=false;T.drag=false;T.src=null;T.open=null;T.node=null;T.hi=null;
+ }
+ document.addEventListener('touchstart',function(e){
+  if(S.phase!=='play'||e.touches.length!==1)return;
+  var n=e.target&&e.target.closest?e.target.closest('[data-cell],[data-card],[data-open]'):null;
+  if(!n)return;
+  if(n.dataset.cell&&!S.found[n.dataset.cell])return;
+  if(n.dataset.card&&!CLUE[n.dataset.card])return;
+  var t=e.touches[0];
+  T.on=true;T.drag=false;T.node=n;T.open=n.dataset.open||null;
+  T.src=T.open?null:(n.dataset.cell||n.dataset.card);
+  T.x0=T.x=t.clientX;T.y0=T.y=t.clientY;T.t0=Date.now();
+ },{passive:true});
+ document.addEventListener('touchmove',function(e){
+  if(!T.on||e.touches.length!==1)return;
+  var t=e.touches[0];T.x=t.clientX;T.y=t.clientY;
+  var d=Math.sqrt((t.clientX-T.x0)*(t.clientX-T.x0)+(t.clientY-T.y0)*(t.clientY-T.y0));
+  if(!T.drag){
+   if(d<12)return;
+   if(Date.now()-T.t0<130){T.on=false;return;}
+   T.drag=true;
+   var g=document.createElement('div');g.id='touchGhost';g.innerHTML=label(T.src,T.open);
+   document.body.appendChild(g);T.ghost=g;
+   if(T.node)T.node.style.opacity='.5';
+  }
+  if(e.cancelable)e.preventDefault();
+  T.ghost.style.left=t.clientX+'px';T.ghost.style.top=t.clientY+'px';
+  var p=el('panel'),r=p.getBoundingClientRect();
+  if(t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom){
+   if(t.clientY<r.top+54)p.scrollTop-=14;
+   else if(t.clientY>r.bottom-54)p.scrollTop+=14;
+  }
+  if(T.hi){T.hi.style.outline='';T.hi=null;}
+  var h=hit(t.clientX,t.clientY);
+  if(h&&h!==T.node&&!h.dataset.open){T.hi=h;h.style.outline='2px solid #8a6a2c';}
+ },{passive:false});
+ document.addEventListener('touchend',function(e){
+  if(!T.on)return;
+  var was=T.drag,openId=T.open,src=T.src,node=T.node,x=T.x,y=T.y;
+  clean();
+  if(!was)return;
+  if(e.cancelable)e.preventDefault();
+  S.suppressClick=true;setTimeout(function(){S.suppressClick=false;},260);
+  if(openId){
+   openCover(openId,node||document.querySelector('[data-open="'+openId+'"]'));
+   S.selected=null;renderPanel();return;
+  }
+  var target=hit(x,y);
+  if(target&&target!==node){apply(src,target);S.selected=null;renderPanel();}
+ },{passive:false});
+ document.addEventListener('touchcancel',function(){if(T.on)clean();},{passive:true});
+ document.addEventListener('click',function(e){
+  if(S.suppressClick){S.suppressClick=false;e.preventDefault();e.stopPropagation();}
+ },true);
+})();
+
+el('btnHint').addEventListener('click',function(){
+ var mid=S.selected||S.reader;
+ if(mid&&MAIN[mid]&&IDENT[mid]&&!S.l2[mid]){
+  if(IDENT[mid].env==='dim'&&!S.dim){log('先把能挡光的东西拉上，屋里得暗一点。',true);}
+  else{
+   var miss=identMissing(mid);
+   if(miss.length){var k=(S.hintCursor||0)%miss.length;S.hintCursor=k+1;
+    log('这一件还差一样：'+itemName(miss[k])+'。'+(IDENT[mid].why||''),true);}
+  }
+ }else if(S.eviFocus!==null&&GROUPS[S.eviFocus]&&!S.eviTip[S.eviFocus]){
+  var g=parseInt(S.eviFocus,10);S.eviTip[g]=true;log('这一组的一句话：'+GROUPS[g].tip,true);
+ }else S.hintLevel=S.hintLevel%3+1;
+ renderPanel();
+});
+el('btnAudio').addEventListener('click',function(){S.sound=!S.sound;Sound.setEnabled(S.sound);renderPanel();});
+
+function nextRoom(){
+ S.room++;S.opened={};S.dim=false;S.placed={};S.doorDone=false;S.lock4=false;S.taskMain=false;
+ S.roomClues=[];S.toolFound=[];S.selected=null;S.reader=null;S.hintCursor=0;
+ el('panel').scrollTop=0;
+ el('scene').classList.remove('dim');
+ buildScene();Sound.setRoom(S.room);refreshMusic();Sound.whisper(S.room===3?'……爸爸':'……我们都在');
+}
+
+/* ======================= 开场序列 ======================= */
+function startSequence(){
+ S.phase='seq';el('seq').hidden=false;
+ Sound.init();Sound.crash();
+ el('seqImg').style.opacity='1';el('flash').style.opacity='0';el('blackout').style.opacity='0';
+ el('seqSub').textContent='';el('seqSub').classList.remove('show');
+ el('seqClick').classList.remove('show');
+ setTimeout(function(){el('flash').style.opacity='1';
+  setTimeout(function(){el('flash').style.opacity='0';el('seqImg').style.opacity='0';el('blackout').style.opacity='1';
+   Sound.tinnitus();Sound.heartbeat();},120);},550);
+ setTimeout(function(){Sound.siren(4.2);},1400);
+ setTimeout(function(){Sound.whisper('……醒醒');},2300);
+ setTimeout(function(){el('seqSub').textContent='一阵眩晕，我这是在哪里，';el('seqSub').classList.add('show');},1800);
+ setTimeout(function(){el('seqSub').textContent='一阵眩晕，我这是在哪里，\n耳边好像有什么人在说话';},4000);
+ setTimeout(function(){Sound.whisper('我们都在呢');},4400);
+ setTimeout(function(){S.phase='await';el('seqClick').classList.add('show');},5400);
+}
+function enterGame(){
+ if(S.phase!=='await')return;
+ S.phase='play';el('seq').hidden=true;buildScene();Sound.setRoom(0);refreshMusic();
+}
+el('seq').addEventListener('click',enterGame);
+el('intro').addEventListener('click',function(){Sound.init();Sound.unlock();el('intro').hidden=true;startSequence();});
+
+/* ======================= 终局 ======================= */
+function showOnly(name){['intro','seq','cinematic','ending','dark'].forEach(function(s){el(s).hidden=(s!==name);});}
+function setCine(item,text){el('cineItem').textContent=item;el('cineLine').textContent=text;}
+function startFinale(){
+ S.phase='finale';showOnly('cinematic');el('stage').style.display='none';
+ /* 文字独白开始，配乐换成肖邦夜曲，一直延续到病房，片尾淡出 */
+ Sound.bgm('finale');
+ var i=0;
+ function paper(){
+  if(i<PAPER_LINES.length){setCine('相框后面',PAPER_LINES[i]);i++;setTimeout(paper,2600);}
+  else setTimeout(sum,1400);
+ }
+ var j=0;
+ function sum(){
+  if(j<SUM.length){setCine('',SUM[j]);j++;setTimeout(sum,2800);}
+  else setTimeout(after,3000);
+ }
+ function after(){
+  setCine('','原来我一直都在撑。');
+  setTimeout(function(){setCine('','门外有人在叫他。');setTimeout(openEnding,2400);},2800);
+ }
+ paper();
+}
+function openEnding(){
+ S.phase='ending';showOnly('ending');
+ el('endLine').textContent='';el('btnHand').hidden=true;
+ Sound.whisper('……我们都在呢');
+ setTimeout(function(){el('endLine').textContent='他慢慢睁开眼睛。';},900);
+ setTimeout(function(){el('endLine').textContent='她和孩子都在。';},2900);
+ setTimeout(function(){el('btnHand').hidden=false;},4400);
+}
+el('btnHand').addEventListener('click',function(){
+ if(S.phase!=='ending')return;
+ el('btnHand').hidden=true;
+ el('endLine').textContent='他把手递了过去。';
+ setTimeout(function(){el('endLine').textContent='那张照片被立在床头。';},2100);
+ setTimeout(function(){
+  S.phase='dark';showOnly('dark');Sound.fadeOutBgm();
+  el('credits').hidden=false;
+  el('credits').textContent='本故事纯属虚构，游戏设计BY酒吾至樽';
+ },4200);
+});
+
+/* 初始化（场景在开场序列后才构建，避免提前闪出） */
+if(IS_TOUCH)el('panelSub').textContent='点一下选中 → 再点目标放下；长按也能拖过去';
+el('stage').style.display='flex';syncBar();
+window.addEventListener('orientationchange',function(){setTimeout(syncBar,350);});
+</script>
+</body>
+</html>
